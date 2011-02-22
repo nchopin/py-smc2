@@ -1,0 +1,26 @@
+\documentclass[a4paper,10pt]{paper}
+%\usepackage[french]{babel}
+\usepackage[latin1]{inputenc}
+%\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{float}
+\usepackage{color}
+\usepackage{fancyhdr}
+% \usepackage{geometry}
+\usepackage{amsmath,amssymb,latexsym}
+\usepackage{stmaryrd}
+\usepackage{pstricks}
+\usepackage{listings}
+\usepackage{subfigure}
+\usepackage{xspace}
+\usepackage{algorithm, algorithmic}
+
+\title{py-SMC$^2$}
+\author{Manual}
+
+\begin{document}
+
+ \maketitle
+
+\end{document}
