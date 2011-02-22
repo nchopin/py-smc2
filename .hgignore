@@ -5,7 +5,12 @@ syntax: glob
 ^*.txt
 *.swp
 *.RData
+*.cpickle
 *.pdf
+*.pyc
+*-userfile.py
+*-plots.R
+*-profile.txt
 
 syntax: regexp
 .*\#.*\#$
