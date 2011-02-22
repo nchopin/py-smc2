@@ -69,14 +69,7 @@ from snippets.localfolder import get_path
 def firstStateGenerator(parameters, size):
     first_state = zeros((size, 5))
     first_state[:, 2] = random.gamma(size = size, shape = parameters[6] * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
-    try:
-        first_state[:, 4] = random.gamma(size = size, shape = (1 - parameters[6]) * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
-    except:
-        print "pb generating gamma"
-        print "parameters"
-        print parameters
-        #raw_input("go on?")
-        raise ValueError("ERROR: generating the initial gamma variables") 
+    first_state[:, 4] = random.gamma(size = size, shape = (1 - parameters[6]) * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
     return first_state
 def observationGenerator(states, parameters):
 ## not implemented

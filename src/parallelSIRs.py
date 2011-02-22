@@ -80,7 +80,6 @@ class ParallelSIRs:
     def first_step(self):
         for i in range(self.Ntheta):
             self.xparticles[:, :, i] = self.modelx.firstStateGenerator(self.thetaparticles[:, i], size = self.Nx)
-        #print "z", self.xparticles[:,1,:]
     def next_steps(self):
         for t in range(self.T):
             excluded = t in self.excludedobservations
@@ -110,8 +109,6 @@ class ParallelSIRs:
             self.totalLogLike += logLike
             if not(excluded):
                 self.xresample()
-            #print self.xparticles
-            #raw_input("ok")
             if self.saveproposals:
                 self.allxparticles[t, ...] = self.xparticles.copy()
     def getTotalLogLike(self):

@@ -139,7 +139,7 @@ class SMCsquare:
 
     def PMCMCstep(self, t):
         """
-        Performs a PMMH move step on each theta-particle.
+        Perform a PMMH move step on each theta-particle.
         """
         transformedthetastar = self.modeltheta.proposal(self.transformedthetaparticles, \
                 self.proposalcovmatrix, hyperparameters = self.modeltheta.hyperparameters,\
@@ -213,14 +213,9 @@ class SMCsquare:
             self.xparticles[...] = TandWresults["states"]
             if not(excluded):
                 self.logxweights[...] = TandWresults["weights"]
+                # in case the measure function returns nans or infs, set the weigths very low
                 self.logxweights[isnan(self.logxweights)] = -(10**150)
                 self.logxweights[isinf(self.logxweights)] = -(10**150)
-                if sum(isnan(self.logxweights)) + sum(isinf(self.logxweights)) >  0:
-                    print "min:", self.logxweights.min()
-                    print "max:", self.logxweights.max()
-                    print "nans:", sum(isnan(self.logxweights))
-                    print "infs:", sum(isinf(self.logxweights))
-                    raw_input("nan or infs")
                 self.constants[:] = numpymax(self.logxweights, axis = 0)
                 self.logxweights[...] -= self.constants[:]
             else:
@@ -297,9 +292,9 @@ class SMCsquare:
                 self.smoothedmeans[smoothkey][subt] = average(tempmean, weights = exp(self.thetalogweights[t,:]))
                 if subt == self.storesmoothingtime:
                     self.smoothedvalues[smoothkey][:] = tempmean
-            print smoothkey
-            print "smoothing", self.smoothedmeans[smoothkey][0:(t+1),...]
-            print "filtering", self.filtered[key][0:(t+1),...]
+#            print smoothkey
+#            print "smoothing", self.smoothedmeans[smoothkey][0:(t+1),...]
+#            print "filtering", self.filtered[key][0:(t+1),...]
         print "smoothing done!"
 
     def computeCovarianceAndMean(self, t):
@@ -320,7 +315,7 @@ class SMCsquare:
 
     def ESSfunction(self, weights):
         """
-        Computes the ESS, given unnormalized weights.
+        Compute the ESS, given unnormalized weights.
         """
         norm_weights = weights / sum(weights)
         sqweights = power(norm_weights, 2)
@@ -328,13 +323,13 @@ class SMCsquare:
 
     def getEvidence(self, thetalogweights, loglike):
         """
-        Returns the evidence at a given time
+        Return the evidence at a given time
         """
         return average(exp(loglike), weights = exp(thetalogweights))
 
     def getResults(self):
         """
-        Returns a dictionary with vectors of interest.
+        Return a dictionary with vectors of interest.
         """
         resultsDict = {"trueparameters": self.modelx.parameters, \
                 "nbparameters" : self.modeltheta.parameterdimension, \

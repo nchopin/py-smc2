@@ -100,9 +100,6 @@ class SOPF:
             self.resample()
             if t in self.savingtimes or t == self.T - 1:
                 reducedParticles, counts = self.reduceParticles(self.thetaparticles)
-                #for index in range(self.thetaparticles.shape[0]):
-                #    if self.modeltheta.whichAreLog[index]:
-                #        reducedParticles[:, index] = exp(reducedParticles[:, index])
                 self.allReducedParticles.append(reducedParticles)
                 self.allCounts.append(counts)
     def reduceParticles(self, thetaparticles):

@@ -110,20 +110,20 @@ TPMCMC = 2000
 # in the models/ subfolder. Provided models are: 
 # - locallevel: basic linear gaussian SSM
 # - thetalogistic: population model with non linear hidden process (Polansky's parameterization)
-# - SVonefactor
-# - SVfixedrho
-# - SVmultifactor
-# - athletics
-# T: number of observations to take into account
+# - SVonefactor: SV stands for stochastic volatility. This model is the one factor model.
+# - SVfixedrho: this one is the two factor model without leverage (rho_1 = rho_2 = 0)
+# - SVmultifactor: this one is the two factor model with leverage
+# - athletics: SSM with GEV observation function, to model the best times in athletics.
+# T: number of observations to be taken into account
 # DATASET could either be a string corresponding to a file named
 # DATASET.R in the data/ subfolder, or "synthetic", in which case
 # data points are simulated from the model.
 # Provided datasets are:
-# - "SP500recent": 2000 data points from the S&P500 index. You can test the
+# - "SP500recent": 753 data points from the S&P500 index. You can test the
 # nonlinear SV model on this data set.
 # - "anisus" (18 data points), or "nutria" (120 data points). You can test these datasets
-# with the thetalogistic models.
-# - "athletics-best-two": (for the athletics records model)
+# with the thetalogistic model.
+# - "athletics-best-two": (for the athletics records model), taken from http://www.alltime-athletics.com/
 
 
 ### 
