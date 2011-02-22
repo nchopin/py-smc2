@@ -1,4 +1,4 @@
-This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2010.6.22)  22 FEB 2011 12:54
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2010.6.22)  22 FEB 2011 12:56
 entering extended mode
  %&-line parsing enabled.
 **manual.tex
@@ -390,7 +390,11 @@ File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 )
 LaTeX Font Info:    Try loading font information for U+stmry on input line 24.
 
-(/usr/share/texmf/tex/latex/stmaryrd/Ustmry.fd) [1
+(/usr/share/texmf/tex/latex/stmaryrd/Ustmry.fd) (./manual.toc)
+\tf@toc=\write3
+\openout3 = `manual.toc'.
+
+ [1
 Non-PDF special ignored!
 Non-PDF special ignored!
 
@@ -398,17 +402,17 @@ Non-PDF special ignored!
 {/usr/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
 (./manual.aux) ) 
 Here is how much of TeX's memory you used:
- 5206 strings out of 256216
- 64060 string characters out of 1917072
- 135894 words of memory out of 1500000
- 8419 multiletter control sequences out of 10000+200000
- 12146 words of font info for 51 fonts, out of 1200000 for 2000
+ 5221 strings out of 256216
+ 64206 string characters out of 1917072
+ 136894 words of memory out of 1500000
+ 8427 multiletter control sequences out of 10000+200000
+ 13702 words of font info for 58 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
  30i,6n,43p,223b,218s stack positions out of 5000i,500n,6000p,200000b,15000s
 </usr/share/texmf/fonts/type1/bluesky/cm/cmr10.pfb></usr/share/
 texmf/fonts/type1/bluesky/cm/cmr12.pfb></usr/share/texmf/fonts/type1/bluesky/cm
 /cmssbx10.pfb></usr/share/texmf/fonts/type1/bluesky/cm/cmssi12.pfb>
-Output written on manual.pdf (1 page, 12217 bytes).
+Output written on manual.pdf (1 page, 21025 bytes).
 PDF statistics:
  22 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 131072)

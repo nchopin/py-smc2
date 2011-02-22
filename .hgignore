@@ -7,6 +7,10 @@ syntax: glob
 *.RData
 *.cpickle
 *.pdf
+*.tex~
+*.toc
+*.log
+*.aux
 *.pyc
 *-userfile.py
 *-plots.R

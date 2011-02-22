@@ -17,10 +17,23 @@
 \usepackage{algorithm, algorithmic}
 
 \title{py-SMC$^2$}
-\author{Manual}
+\author{User manual}
 
 \begin{document}
 
  \maketitle
+
+
+\section{Parameters}
+
+\subsection{Important ones}
+
+\subsection{Less important ones}
+
+\section{Models}
+
+\subsection{Understand models}
+
+\subsection{Making your own models}
 
 \end{document}
