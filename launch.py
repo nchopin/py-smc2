@@ -26,6 +26,7 @@ from numpy import random, power, sqrt, exp, zeros, \
         array, float32, int32, cov, isnan, load, savez
 from src.smcsquare import SMCsquare
 from src.sopf import SOPF 
+from src.bsmc import BSMC
 from src.adpmcmc import AdaptivePMCMC
 from snippets.localfolder import get_path
 import userfile as userfile
@@ -74,10 +75,12 @@ if userfile.METHOD == "SMC2":
             "smoothingtimes": userfile.SMOOTHINGTIMES, "storesmoothingtime": userfile.STORESMOOTHINGTIME}
 elif userfile.METHOD == "SOPF":
     algorithmparameters = {"N": userfile.NSOPF}
+elif userfile.METHOD == "BSMC":
+    algorithmparameters = {"N": userfile.NBSMC}
 elif userfile.METHOD == "adPMCMC":
     algorithmparameters = {"N": userfile.NPMCMC, "nbiterations": userfile.TPMCMC}
 else:
-    raise ValueError("ERROR: METHOD should be SMC2, SOPF or adPMCMC.")
+    raise ValueError("ERROR: METHOD should be SMC2, SOPF, BSMC or adPMCMC.")
 
 userfile.T = min(userfile.T, xmodule.modelx.model_obs.shape[0])
 print "using %i observations out of %i..." % (userfile.T, xmodule.modelx.model_obs.shape[0])
@@ -106,6 +109,10 @@ dynamicNx = userfile.DYNAMICNX, savingtimes = userfile.SAVINGTIMES)\
         cProfile.run("""\
 algo = SOPF(model, algorithmparameters, savingtimes = userfile.SAVINGTIMES)\
     """, "prof")
+    elif userfile.METHOD == "BSMC":
+        cProfile.run("""\
+algo = BSMC(model, algorithmparameters, savingtimes = userfile.SAVINGTIMES)\
+    """, "prof")
     elif userfile.METHOD == "adPMCMC":
         cProfile.run("""\
 algo = AdaptivePMCMC(model, algorithmparameters)\
@@ -120,6 +127,8 @@ else:
                 dynamicNx = userfile.DYNAMICNX, savingtimes = userfile.SAVINGTIMES)
     elif userfile.METHOD == "SOPF":
         algo = SOPF(model, algorithmparameters, savingtimes = userfile.SAVINGTIMES)
+    elif userfile.METHOD == "BSMC":
+        algo = BSMC(model, algorithmparameters, savingtimes = userfile.SAVINGTIMES)
     elif userfile.METHOD == "adPMCMC":
         algo = AdaptivePMCMC(model, algorithmparameters) 
 
@@ -151,6 +160,8 @@ else:
         basename = "%s-T%i-Nx%i-Nth%i" % (prefix, userfile.T, userfile.NX, userfile.NTHETA)
     elif userfile.METHOD == "SOPF":
         basename = "%s-T%i-N%i" % (prefix, userfile.T, userfile.NSOPF)
+    elif userfile.METHOD == "BSMC":
+        basename = "%s-T%i-N%i" % (prefix, userfile.T, userfile.NBSMC)
     else:
         basename = "%s-T%i" % (prefix, userfile.T)
 if userfile.REPLACEFILE:
@@ -191,6 +202,7 @@ f.close()
 
 if "RData" in userfile.RESULTSFILETYPE:
     from snippets.pickletoRdata import pickle2RData
+    ## wait RDatafile looks kinda useless now
     RDatafile = resultsfile.replace(".cpickle", ".RData")
     print "...and saving results in %s..." % RDatafile
     pickle2RData(resultsfile)
@@ -211,6 +223,9 @@ if userfile.GENERATERFILE:
     elif userfile.METHOD == "SOPF":
         from src.plotresultsSOPF import PlotResultsSOPF
         plotter = PlotResultsSOPF(resultsfolder, RDatafile)
+    elif userfile.METHOD == "BSMC":
+        from src.plotresultsBSMC import PlotResultsBSMC
+        plotter = PlotResultsBSMC(resultsfolder, RDatafile)
     plotter.setParameters(thetamodule.modeltheta.parameternames)
     plotter.setModelTheta(thetamodule.modeltheta)
     plotter.setModelX(xmodule.modelx)

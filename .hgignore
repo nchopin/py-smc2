@@ -1,4 +1,5 @@
 syntax: glob
+test*R
 ^*.py
 ^*.R
 ^*.csv

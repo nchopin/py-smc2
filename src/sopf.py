@@ -1,3 +1,8 @@
+###
+# warning: this should be modified so that the init distribution
+# of the parameters
+# is used when it is specified (instead of the prior)
+#
 ###################################################
 #    This file is part of py-smc2.
 #    http://code.google.com/p/py-smc2/

@@ -50,12 +50,7 @@ DATASET = "synthetic"
 ### (see below for explanations)
 ##########################
 
-METHOD = "SMC2"
-NTHETA = 100
-NX = 50
-DYNAMICNX = True
-PROPOSALKERNEL = "independent"
-ESSTHRESHOLD = 0.5
+METHOD = "BSMC"
 
 ##########################
 ### Plot options
@@ -63,8 +58,6 @@ ESSTHRESHOLD = 0.5
 GENERATERFILE = True
 ## Generate pdf figures using the R file (requires R and package "ggplot2")
 PLOT = True
-
-
 
 ###
 ##########################
@@ -75,6 +68,11 @@ PLOT = True
 # PROPOSALKERNEL can be either "randomwalk" or "independent".
 # ESSTHRESHOLD: resample-move steps are triggered when the ESS goes below ESSTHRESHOLD.
 ###
+NTHETA = 200 
+NX = 50
+DYNAMICNX = True
+PROPOSALKERNEL = "independent"
+ESSTHRESHOLD = 0.5
 ##########################
 ### Advancer parameters for SMC2
 ## If DYNAMICNX, acceptance rate limit:
@@ -92,7 +90,13 @@ NBMOVES = 1
 ### SOPF algorithm parameters
 # If you want to try the SOPF algorithm to compare the results,
 # specify the number of particles here:
-NSOPF = 10000
+NSOPF = 1000
+
+##########################
+### BSMC algorithm parameters
+# If you want to try the BSMC algorithm to compare the results,
+# specify the number of particles here:
+NBSMC = 100000
 
 ### 
 ##########################
