@@ -209,7 +209,8 @@ class SMCsquare:
             print "time %i" % t
             if excluded:
                 print "observations", self.observations[t,:], "set to be excluded"
-            TandWresults = self.modelx.transitionAndWeight(self.xparticles, self.observations[t], self.thetaparticles, t)
+            TandWresults = self.modelx.transitionAndWeight(self.xparticles, \
+                    self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"]
             if not(excluded):
                 self.logxweights[...] = TandWresults["weights"]

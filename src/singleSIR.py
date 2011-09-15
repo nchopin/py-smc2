@@ -74,7 +74,8 @@ class SingleSIR:
                 print "time %i" % t
                 if excluded:
                     print "observations", self.observations[t,:], "set to be excluded"
-            TandWresults = self.modelx.transitionAndWeight(self.xparticles[..., newaxis], self.observations[t,:], self.theta[:, newaxis], t)
+            TandWresults = self.modelx.transitionAndWeight(self.xparticles[..., newaxis], \
+                    self.observations[t,:], self.theta[:, newaxis], t + 1)
             self.xparticles[...] = TandWresults["states"][..., 0]
             if not(excluded):
                 self.logxweights[...] = TandWresults["weights"][..., 0]

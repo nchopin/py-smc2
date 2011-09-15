@@ -30,39 +30,7 @@ from numpy import min as numpymin
 from numpy import sum as numpysum
 import scipy.weave as weave
 from resampling import IndResample
-
-def ESSfunction(weights):
-    """
-    Computes the ESS, given unnormalized weights.
-    """
-    norm_weights = weights / sum(weights)
-    sqweights = power(norm_weights, 2)
-    return 1 / sum(sqweights)
-
-def fastWeightedCov(X, unnormalizedw):
-    weights = unnormalizedw / numpysum(unnormalizedw)
-    Xbar = average(X, weights = weights, axis = 0)
-    code = \
-    """
-    int row,col;
-    for (row = 0; row < d(0); row++)
-    {
-        for(col = 0; col < d(0); col++)
-        {
-          for (int index = 0; index < N(0); index ++){
-            covariance(row, col) += weights(index) * (X(index, row) - Xbar(row)) * (X(index, col) - Xbar(col));
-          }
-        }
-    }
-    """
-    d = X.shape[1]
-    covariance = zeros((d, d))
-    d = array([d])
-    N = array([X.shape[0]])
-    weave.inline(code,['covariance', 'd', 'N', 'Xbar', 'X', 'weights'], \
-        type_converters=weave.converters.blitz, libraries = ["m"])
-    weightedcovariance = covariance / (1 - numpysum(power(weights, 2)))
-    return {"mean": Xbar, "cov": weightedcovariance}
+from various import fastWeightedCov, ESSfunction
 
 class BSMC:
     """
@@ -72,12 +40,17 @@ class BSMC:
     to explode too quickly.
     """
     def __init__(self, model, algorithmparameters, savingtimes = [], autoinit = True):
+        # models... 
         self.modelx = model["modelx"]
         self.modeltheta = model["modeltheta"]
         self.observations = model["observations"]
+        # parameters...
+        self.N = algorithmparameters["N"]
+        self.smooth = algorithmparameters["smooth"]
+        self.ESSthreshold = algorithmparameters["ESSthreshold"]
+        # useful quantities that we want to access easily 
         self.statedimension = self.modelx.xdimension
         self.obsdimension = self.modelx.ydimension
-        self.N = algorithmparameters["N"]
         self.T = self.observations.shape[0]
         self.thetaparticles = zeros((self.modeltheta.parameterdimension, self.N))
         self.transformedthetaparticles = zeros((self.modeltheta.parameterdimension, self.N))
@@ -87,12 +60,14 @@ class BSMC:
         self.constants = zeros(self.T)
         self.savingtimes = savingtimes
         self.savingtimes.append(self.T)
-        self.smooth = 0.1
         self.hsq = power(self.smooth, 2)
         self.shrink = sqrt(1 - self.hsq)
+        self.ESS = zeros(self.T)
+        self.resamplingindices = []
         # number of already past saving times
         self.alreadystored = 0
         self.thetahistory = zeros((len(self.savingtimes), self.modeltheta.parameterdimension, self.N))
+        self.weighthistory = zeros((len(self.savingtimes), self.N))
         print "------------------"
         print "launching Liu and West's SMC, with algorithm parameters:"
         for key, element in algorithmparameters.items():
@@ -135,7 +110,7 @@ class BSMC:
         for t in range(0, self.T):
             print "time %i" % t
             TandWresults = self.modelx.transitionAndWeight(self.xparticles[newaxis, ...], \
-                    self.observations[t], self.thetaparticles, t)
+                    self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"][0, ...]
             self.logxweights[:] = TandWresults["weights"][0, :]
             self.logxweights[isnan(self.logxweights)] = -(10**150)
@@ -144,38 +119,24 @@ class BSMC:
             self.logxweights[:] -= self.constants[t]
             self.xweights[:] = exp(self.logxweights)
             covmean = self.computeCovarianceAndMean()
-            #print transpose(covmean["mean"][newaxis])
-            #print (self.transformedthetaparticles)
             m = (self.shrink) * self.transformedthetaparticles + \
                 (1 - self.shrink) * transpose(covmean["mean"][newaxis])
-            #print m
-            #V = covmean["cov"]
-            #noise = rnorm(mean = 0, var = self.hsq *V)
-            #print "covariance of noise:"
-            #print covmean["cov"]
             noise = transpose(random.multivariate_normal(repeat(0, self.modeltheta.parameterdimension), \
                 self.hsq * covmean["cov"], size = self.N))
             self.transformedthetaparticles[...] = m + noise
             self.thetaparticles[...] = self.modeltheta.untransform(self.transformedthetaparticles)
-            self.resample()
+            self.ESS[t] = ESSfunction(self.xweights[:])
+            if self.ESS[t] < (self.ESSthreshold * self.N):
+                self.resample()
+                self.resamplingindices.append(t)
             if t in self.savingtimes or t == self.T - 1:
                 print "saving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
+                self.weighthistory[self.alreadystored, ...] = self.xweights.copy()
                 self.alreadystored += 1
     def computeCovarianceAndMean(self):
         X = transpose(self.transformedthetaparticles)
         res = fastWeightedCov(X, self.xweights[:])
-#        w = self.xweights[:] / numpysum(self.xweights[:])
-#        weightedmean = average(X, weights = w, axis = 0)
-#        diagw = diag(w)
-#        part1 = dot(transpose(X), dot(diagw, X))
-#        Xtw = dot(transpose(X), w[:, newaxis])
-#        part2 = dot(Xtw, transpose(Xtw))
-#        numerator = part1 - part2
-#        denominator = 1 - numpysum(w**2)
-#        weightedcovariance = numerator / denominator
-#        # increase a little bit the diagonal to prevent degeneracy effects
-#        weightedcovariance += diag(zeros(self.modeltheta.parameterdimension) + 10**(-4)/self.modeltheta.parameterdimension)
         res["cov"] += diag(zeros(self.modeltheta.parameterdimension) + \
             10**(-4)/self.modeltheta.parameterdimension)
         return res
@@ -183,8 +144,11 @@ class BSMC:
         resultsDict = {"trueparameters" : self.modelx.parameters,\
                 "N" : self.N, "T" : self.T, "nbparameters" : self.modeltheta.parameterdimension, \
                 "observations": self.observations, \
-                "savingtimes" : self.savingtimes,
-                "thetahistory": self.thetahistory}
+                "savingtimes" : self.savingtimes, \
+                "thetahistory": self.thetahistory, \
+                "weighthistory": self.weighthistory, \
+                "ESS": self.ESS, \
+                "resamplingindices": self.resamplingindices}
         return resultsDict
             
 

@@ -94,7 +94,7 @@ class SOPF:
         for t in range(0, self.T):
             print "time %i" % t
             TandWresults = self.modelx.transitionAndWeight(self.xparticles[newaxis, ...], \
-                    self.observations[t], self.thetaparticles, t)
+                    self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"][0, ...]
             self.logxweights[:] = TandWresults["weights"][0, :]
             self.logxweights[isnan(self.logxweights)] = -(10**150)

@@ -1,0 +1,7 @@
+ - ajouter aux resultats de SMC2 le nombre d'appel a TransitionAndWeights
+ en comptant tout (ie y compris les etapes de PMCMC)
+ - changer l'adaptation du PMCMC pour que ca soit genre robbins monroe plutot
+   que le melange de distribution
+ - changer la methode pour calculer la covariance empirique pour que ca soit
+   plus rapide
+

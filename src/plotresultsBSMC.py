@@ -32,6 +32,7 @@ class PlotResultsBSMC(PlotResults):
         self.Rcode += """pdf(file = pdffile, useDingbats = FALSE, title = "%s results")\n""" % self.method
         self.parametersHaveBeenLoaded = False
     def everything(self):
+        self.ESS()
         self.allParameters()
         self.addObservations()
         self.close()
@@ -41,15 +42,12 @@ class PlotResultsBSMC(PlotResults):
         self.Rcode += \
 """
 indexhistory <- length(savingtimes)
-finaltime <- savingtimes[indexhistory]
-thetasDF <- as.data.frame(t(thetahistory[indexhistory,,]))
-names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""))
-#particles <- allreducedparticles[[indexhistory]]
-#nbparticles = dim(particles)[1]
-#w <- allcounts[[indexhistory]]
-#thetas <- as.data.frame(particles)
-#thetasDF <- cbind(thetas, w)
-#names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""), "w")
+t <- savingtimes[indexhistory]
+w <- weighthistory[indexhistory,]
+w <- w / sum(w)
+thetas <- as.data.frame(t(thetahistory[indexhistory,,]))
+thetasDF <- cbind(thetas, w)
+names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""), "w")
 """
         self.parametersHaveBeenLoaded = True
     def histogramparameter(self, parameterindex):
@@ -58,11 +56,33 @@ names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""))
         self.Rcode += \
 """
 i <- %(parameterindex)i
-g <- ggplot(thetasDF, aes(thetasDF[[i]]))  
+g <- ggplot(thetasDF, aes(thetasDF[[i]], weight = w))
 g <- g + geom_histogram(aes(y=..density..), colour = "black", fill = "white")
 g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
-print(g)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
-
+        if self.modeltheta.truevaluesAvailable:
+            self.Rcode += \
+"""
+g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+"""
+        if self.modeltheta.RpriorAvailable:
+            self.Rcode += \
+"""
+%s
+g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size = 1)
+""" % self.modeltheta.Rfunctionlist[parameterindex]
+        self.Rcode += \
+"""
+print(g)
+"""
+    def ESS(self):
+        self.Rcode += \
+"""
+N <- dim(thetahistory)[3]
+ESSdataframe <- as.data.frame(cbind(1:length(ESS), ESS))
+g <- ggplot(data = ESSdataframe, aes(x = V1, y= ESS))
+g <- g + geom_line() + xlab("iterations") + ylab("ESS") + ylim(0, N)
+print(g)
+"""
 
 

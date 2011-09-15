@@ -41,8 +41,10 @@ def convertarray(element, key, RF):
     elif len(s) == 2:
         print "converting numpy matrix '%s' to R matrix... " % key
         RF.r("""%s <- matrix(nrow = %i, ncol = %i)""" % (key, s[0], s[1]))
-        for column in range(s[1]):
-            RF.r(""" %s[,%i+1] <- %s """ % (key, column, R_repr(element[:,column])))
+        for row in range(s[0]):
+            RF.r(""" %s[%i+1,] <- %s """ % (key, row, R_repr(element[row,:])))
+        #for column in range(s[1]):
+        #    RF.r(""" %s[,%i+1] <- %s """ % (key, column, R_repr(element[:,column])))
     elif len(s) == 3:
         print "converting numpy array (dim = 3) '%s' to R array..." % key
         RF.r("""%s <- array(dim = c(%i, %i, %i))""" % (key, s[0], s[1], s[2]))
@@ -92,7 +94,9 @@ def pickle2RData(picklefilename):
                 convertarray(dvalue, key + dkey, RF)
         else:
             print "can't handle object '%' ..." % key
+    print "saving..."
     RF.r("""save(list = ls(), file = "%s")""" % RDatafilename)
     RF.saveRData(RDatafilename)
+    print "conversion finished"
 
 

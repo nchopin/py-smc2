@@ -36,8 +36,8 @@
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "locallevel"
-T = 100
+MODEL = "periodic"
+T = 1000
 #DATASET = "athletics-best-two"
 DATASET = "synthetic"
 
@@ -46,11 +46,12 @@ DATASET = "synthetic"
 # METHOD could be:
 # SMC2: SMC square as described in Chopin, Jacob and Papaspiliopoulos
 # SOPF: Self Organizing Particle Filter, as described in Kitagawa
+# BSMC: Self Organizing Particle Filter, as described in Kitagawa
 # adPMCMC: Adaptive PMCMC as described in Peters, Hosack and Hayes
 ### (see below for explanations)
 ##########################
 
-METHOD = "BSMC"
+METHOD = "SMC2"
 
 ##########################
 ### Plot options
@@ -68,9 +69,9 @@ PLOT = True
 # PROPOSALKERNEL can be either "randomwalk" or "independent".
 # ESSTHRESHOLD: resample-move steps are triggered when the ESS goes below ESSTHRESHOLD.
 ###
-NTHETA = 200 
-NX = 50
-DYNAMICNX = True
+NTHETA = 1000 
+NX = 250
+DYNAMICNX = False
 PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
 ##########################
@@ -90,22 +91,29 @@ NBMOVES = 1
 ### SOPF algorithm parameters
 # If you want to try the SOPF algorithm to compare the results,
 # specify the number of particles here:
-NSOPF = 1000
+NSOPF = 100000
 
 ##########################
 ### BSMC algorithm parameters
 # If you want to try the BSMC algorithm to compare the results,
 # specify the number of particles here:
 NBSMC = 100000
+# specify the "h" factor used in the kernel density approximation
+# of the distribution of the parameters given the data
+# should be "slowly decreasing with N", N being the number of particles
+BSMCsmooth = 0.1
+# specify the ESS threshold (between 0 and 1). 1 means resampling
+# steps occur at each steps, while 0 means resampling never occurs
+BSMCESSTHRESHOLD = 0.99
 
 ### 
 ##########################
 ### adaptive PMCMC algorithm parameters
 # If you want to try the adaptive PMCMC algorithm to compare the results:
 # Number of x-particles:
-NPMCMC = 100
+NPMCMC = 500
 # Number of iterations:
-TPMCMC = 2000
+TPMCMC = 1000
 
 ### 
 ##########################
@@ -145,7 +153,7 @@ SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 
 ### Should the program report profiling? (Slows the program a little bit).
-PROFILING = True
+PROFILING = True 
 
 # Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.
@@ -160,7 +168,8 @@ USESUBFOLDERS = True
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs
 # of subfolder rgraphs/.
-RESULTSFILETYPE = ["RData", "cpickle"]
+#RESULTSFILETYPE = ["RData", "cpickle"]
+RESULTSFILETYPE = ["RData"]
 ##########################
 
 

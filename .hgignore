@@ -1,4 +1,5 @@
 syntax: glob
+^prof*
 test*R
 ^*.py
 ^*.R

@@ -76,7 +76,8 @@ if userfile.METHOD == "SMC2":
 elif userfile.METHOD == "SOPF":
     algorithmparameters = {"N": userfile.NSOPF}
 elif userfile.METHOD == "BSMC":
-    algorithmparameters = {"N": userfile.NBSMC}
+    algorithmparameters = {"N": userfile.NBSMC, "smooth": userfile.BSMCsmooth, \
+            "ESSthreshold": userfile.BSMCESSTHRESHOLD}
 elif userfile.METHOD == "adPMCMC":
     algorithmparameters = {"N": userfile.NPMCMC, "nbiterations": userfile.TPMCMC}
 else:
