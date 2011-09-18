@@ -14,20 +14,20 @@ class RFeeder:
         self.txt = "rm(list = ls())" + "\n"
     def r(self, newtext):
         self.txt += newtext + "\n"
-    def savetxt(self, txtfilename):
-        self.txtfilename = txtfilename
-        f = open(self.txtfilename, "w")
-        f.write(self.txt)
-        f.close()
-    def saveRData(self, RDatafilename):
-        txtfilename = "pickle2RData-tmp.R"
-        self.savetxt(txtfilename)
-        import subprocess
-        subprocess.call(["R", "CMD", "BATCH", "--vanilla", self.txtfilename, "pickle2RData-tmp.out"])
-        self.removeTxtFile()
-    def removeTxtFile(self):
-        os.remove(self.txtfilename)
-        os.remove("pickle2RData-tmp.out")
+#    def savetxt(self, txtfilename):
+#        self.txtfilename = txtfilename
+#        f = open(self.txtfilename, "w")
+#        f.write(self.txt)
+#        f.close()
+#    def saveRData(self, RDatafilename):
+#        txtfilename = "pickle2RData-tmp.R"
+#        self.savetxt(txtfilename)
+#        import subprocess
+#        subprocess.call(["R", "CMD", "BATCH", "--vanilla", self.txtfilename, "pickle2RData-tmp.out"])
+#        self.removeTxtFile()
+#    def removeTxtFile(self):
+#        os.remove(self.txtfilename)
+#        os.remove("pickle2RData-tmp.out")
 
 
 def R_repr(numpyarray):
@@ -55,14 +55,11 @@ def convertarray(element, key, RF):
     else:
         print "Don't know how to convert %s !!!" % key
 
-def pickle2RData(picklefilename):
+
+def dictionary2RDataWithoutRPY(d, RDatafilename):
     RF = RFeeder()
-    RDatafilename = picklefilename.replace(".cpickle", ".RData")
-    f = open(picklefilename, "r")
-    pickle = cPickle.load(f)
-    f.close()
-    for key in pickle.keys():
-        element = pickle[key]
+    for key in d.keys():
+        element = d[key]
         if type(element) is numpy.ndarray:
             convertarray(element, key, RF)
         elif isinstance(element, list):
@@ -94,9 +91,63 @@ def pickle2RData(picklefilename):
                 convertarray(dvalue, key + dkey, RF)
         else:
             print "can't handle object '%' ..." % key
-    print "saving..."
+
     RF.r("""save(list = ls(), file = "%s")""" % RDatafilename)
-    RF.saveRData(RDatafilename)
+    print "saving..."
+    txtbasename = "/tmp/unique"
+    counter = 0
+    txtfilename = "%s(%i).R" % (txtbasename, counter)
+    while os.path.isfile(txtfilename):
+        counter += 1
+        txtfilename = "%s(%i).R" % (txtbasename, counter)
+    f = open(txtfilename, "w")
+    f.write(RF.txt)
+    f.close()
+    import subprocess
+    subprocess.call(["R", "CMD", "BATCH", "--vanilla", txtfilename, "/dev/null"])
+    os.remove(txtfilename)
     print "conversion finished"
 
+
+def dictionary2RDataWithRPY(d, RDatafilename):
+    RF = RFeeder()
+    for key in d.keys():
+        element = d[key]
+        if type(element) is numpy.ndarray:
+            convertarray(element, key, RF)
+        elif isinstance(element, list):
+            print "converting python list '%s'to R vector..." % key
+            if len(element) == 0:
+                RF.r(""" %s <- list()""" % key)
+            else:
+                if isinstance(element[0], numpy.ndarray):
+                    print "it is a list of arrays"
+                    RF.r(""" %s <- list()""" % key)
+                    for indexsubelement, subelement in enumerate(element):
+                        convertarray(subelement, key + "%i" % (indexsubelement + 1), RF)
+                        RF.r(""" %s$"%i" <- %s"""  % (key, indexsubelement + 1, key + "%i" % (indexsubelement + 1)))
+                        RF.r(""" rm(list = grep("all.+[0-9]", ls(), value = T)) """)
+                else:
+                    RF.r(""" %s <- %s """ % (key, R_repr(element)))
+        elif isinstance(element, float):
+            print "converting python float '%s' to R float..." % key
+            RF.r(""" %s <- %.10f""" % (key, element))
+        elif isinstance(element, int):
+            print "converting python int '%s' to R int..." % key
+            RF.r(""" %s <- %i""" % (key, element))
+        elif isinstance(element, str):
+            print "can't handle text '%s' ..." % key
+            pass
+        elif isinstance(element, dict):
+            print "converting python dict '%s' to R list" % key
+            for dkey, dvalue in element.items():
+                convertarray(dvalue, key + dkey, RF)
+        else:
+            print "can't handle object '%' ..." % key
+
+    print "saving..."
+    RF.r("""save(list = ls(), file = "%s")""" % RDatafilename)
+    import rpy2.robjects as robjects
+    robjects.r(RF.txt)
+    print "conversion finished"
 

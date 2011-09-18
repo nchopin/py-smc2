@@ -37,7 +37,7 @@
 ### Model and dataset:
 # (see below for possible values)
 MODEL = "thetalogistic"
-T = 10
+T = 1000
 #DATASET = "athletics-best-two"
 DATASET = "synthetic"
 
@@ -71,7 +71,7 @@ PLOT = True
 ###
 NTHETA = 1000 
 NX = 250
-DYNAMICNX = False
+DYNAMICNX = True
 PROPOSALKERNEL = "randomwalk"
 ESSTHRESHOLD = 0.5
 ##########################
@@ -163,7 +163,7 @@ RESULTSFILENAME = ""
 REPLACEFILE = False
 # Use subfolders for each model and each dataset to organize the results.
 # If False, use long names and store the results at the root of the results/ folder.
-USESUBFOLDERS = False 
+USESUBFOLDERS = True
 # RESULTSFILETYPE could include "RData" and "cpickle".
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs

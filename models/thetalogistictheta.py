@@ -89,6 +89,7 @@ modeltheta.setPriorgenerator(rprior)
 modeltheta.setParameterNames(["expression(sigma[epsilon]^2)", "expression(sigma[W]^2)", \
         "expression(log(N[0]))", "expression(r)", "expression(K)", "expression(theta)"])
 modeltheta.setTransformation(["log", "log", "none", "log", "log", "log"])
+modeltheta.setRtruevalues([0.05**2, 0.05**2, log(1), 0.18, 1, 0.2])
 
 
 

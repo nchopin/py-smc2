@@ -14,7 +14,7 @@ from snippets.localfolder import get_path
 from src.singleSIR import SingleSIR
 
 
-MODEL = "periodic"
+MODEL = "thetalogistic"
 
 
 THISPATH = get_path()
@@ -29,11 +29,11 @@ f, filename, description = imp.find_module(thetamodulename)
 thetamodule = imp.load_module("thetamodule", f, filename, description)
 
 print "Creating data set..."
-xmodule.modelx.generateData(100, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
+xmodule.modelx.generateData(10000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
 
 nbparameters = thetamodule.modeltheta.parameterdimension
 Nx = 50000
-T = min(30, xmodule.modelx.model_obs.shape[0])
+T = min(300, xmodule.modelx.model_obs.shape[0])
 model_obs = xmodule.modelx.model_obs[0:T, :]
 model_states = xmodule.modelx.model_states[0:T, :]
 

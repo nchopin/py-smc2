@@ -30,7 +30,7 @@ from numpy import min as numpymin
 from numpy import sum as numpysum
 import scipy.weave as weave
 from resampling import IndResample
-from various import fastWeightedCov, ESSfunction
+from various import fastWeightedCov, ESSfunction, progressbar
 
 class BSMC:
     """
@@ -108,7 +108,8 @@ class BSMC:
         Perform all the iterations until time T == number of observations.
         """
         for t in range(0, self.T):
-            print "time %i" % t
+            #print "time %i" % t
+            progressbar(t / (self.T - 1))
             TandWresults = self.modelx.transitionAndWeight(self.xparticles[newaxis, ...], \
                     self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"][0, ...]
@@ -130,7 +131,7 @@ class BSMC:
                 self.resample()
                 self.resamplingindices.append(t)
             if t in self.savingtimes or t == self.T - 1:
-                print "saving particles at time %i" % t
+                print "\nsaving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
                 self.weighthistory[self.alreadystored, ...] = self.xweights.copy()
                 self.alreadystored += 1

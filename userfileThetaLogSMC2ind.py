@@ -37,7 +37,7 @@
 ### Model and dataset:
 # (see below for possible values)
 MODEL = "thetalogistic"
-T = 10
+T = 1000
 #DATASET = "athletics-best-two"
 DATASET = "synthetic"
 
@@ -71,8 +71,8 @@ PLOT = True
 ###
 NTHETA = 1000 
 NX = 250
-DYNAMICNX = False
-PROPOSALKERNEL = "randomwalk"
+DYNAMICNX = True
+PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
 ##########################
 ### Advancer parameters for SMC2
@@ -157,7 +157,7 @@ PROFILING = True
 
 # Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.
-RESULTSFILENAME = ""
+RESULTSFILENAME = "ind"
 # Replace already existing files; if False,
 # a counter will be added to the result file name, so that no existing files are erased.
 REPLACEFILE = False

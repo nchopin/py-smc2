@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-import os, os.path
+import os, os.path, sys
 from numpy import random, power, sqrt, exp, zeros, zeros_like,\
         ones, mean, average, prod, log, sum, repeat, newaxis, \
         array, float32, int32, cov, load, isinf, isnan, zeros_like, \
@@ -63,6 +63,17 @@ def fastWeightedCov(X, unnormalizedw):
     weightedcovariance = covariance / (1 - numpysum(power(weights, 2)))
     return {"mean": Xbar, "cov": weightedcovariance}
 
-
-
+def progressbar(ratio, text=None, ticks=50):
+   progress = int(ticks * ratio)
+   s = '%.1f%%' % (100.0 * ratio)
+   length = len(s)
+   if progress > ticks / 2 - length:
+       sys.stdout.write('\r[' + int(ticks / 2 - length) * '-' + s
+                        + int(progress - ticks / 2) * '-' + int(min(ticks -
+                            progress, ticks / 2)) * ' ' + ']')
+   else:
+       sys.stdout.write('\r[' + progress * '-' + int(ticks / 2 - length - progress) * ' ' + s
+                        + int(ticks / 2) * ' ' + ']')
+   if not text is None: sys.stdout.write(text)
+   sys.stdout.flush()
 

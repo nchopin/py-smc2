@@ -30,6 +30,7 @@ from numpy import min as numpymin
 from numpy import sum as numpysum
 from scipy.stats import norm
 from resampling import IndResample, resample2D
+from various import ESSfunction, progressbar
 from parallelSIRs import *
 
 class SMCsquare:
@@ -206,9 +207,10 @@ class SMCsquare:
         """
         for t in range(self.T):
             excluded = t in self.excludedobservations
-            print "time %i" % t
+            #print "time %i" % t
+            progressbar(t / (self.T - 1))
             if excluded:
-                print "observations", self.observations[t,:], "set to be excluded"
+                print "\nobservations", self.observations[t,:], "set to be excluded"
             TandWresults = self.modelx.transitionAndWeight(self.xparticles, \
                     self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"]
@@ -235,13 +237,16 @@ class SMCsquare:
                 self.thetalogweights[t, :] = self.thetalogweights[t, :] + self.logLike[:]
             self.thetalogweights[t, :] -= max(self.thetalogweights[t, :])
             self.xresample()
-            self.ESS[t] = self.ESSfunction(exp(self.thetalogweights[t, :]))
+            self.ESS[t] = ESSfunction(exp(self.thetalogweights[t, :]))
             if self.AP["dynamicNx"]:
-                print "ESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx)
+                #print "\nESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx)
+                progressbar(t / (self.T - 1), text = " ESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx))
             else:
-                print "ESS: %.3f" % self.ESS[t]
+                #print "\nESS: %.3f" % self.ESS[t]
+                progressbar(t / (self.T - 1), text = " ESS: %.3f" % self.ESS[t])
             if self.ESS[t] < (self.AP["ESSthreshold"] * self.Ntheta):
-                print "resample step... "
+                #print "\nresample step... "
+                progressbar(t / (self.T - 1), text = " resample move step at iteration = %i " % t)
                 covdict = self.computeCovarianceAndMean(t)
                 if self.AP["proposalkernel"] == "randomwalk":
                     self.proposalcovmatrix = self.AP["rwvariance"] * covdict["cov"]
@@ -251,12 +256,12 @@ class SMCsquare:
                     self.proposalmean = covdict["mean"]
                 self.thetaresample(t)
                 self.resamplingindices.append(t)
-                print "move step... "
+                #print "\nmove step... "
                 for move in range(self.AP["nbmoves"]):
                     self.PMCMCstep(t)
                     if self.acceptratios[-1] < self.AP["dynamicNxThreshold"] and self.Nx < (self.AP["NxLimit"] / 2) \
                             and self.AP["dynamicNx"]:
-                        print "increasing the number of x-particles... "
+                        print "\nincreasing the number of x-particles... "
                         self.increaseParticlesNb(t)
             """ filtering and smoothing """
             if self.filteringEnable:
@@ -264,7 +269,7 @@ class SMCsquare:
             if self.smoothingEnable and (t in self.smoothingtimes):
                 self.smoothing(t)
             if t in self.savingtimes or t == self.T - 1:
-                print "saving particles at time %i" % t
+                print "\nsaving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
                 self.weighthistory[self.alreadystored, ...] = exp(self.thetalogweights[t, :])
                 self.alreadystored += 1
@@ -274,7 +279,7 @@ class SMCsquare:
             tempmatrix = mean(tempmatrix, axis = 0)
             self.filtered[key][t] = average(tempmatrix, weights = exp(self.thetalogweights[t,:]))
     def smoothing(self, t):
-        print "smoothing time"
+        print "\nsmoothing time"
         from singleSIR import SingleSIR
         smoothedx = zeros((t+1, self.statedimension, self.Ntheta))
         randomindices = random.randint(low = 0, high = self.Nx, size = self.Ntheta)
@@ -313,14 +318,6 @@ class SMCsquare:
         # increase a little bit the diagonal to prevent degeneracy effects
         weightedcovariance += diag(zeros(self.modeltheta.parameterdimension) + 10**(-4)/self.modeltheta.parameterdimension)
         return {"mean": weightedmean, "cov": weightedcovariance}
-
-    def ESSfunction(self, weights):
-        """
-        Compute the ESS, given unnormalized weights.
-        """
-        norm_weights = weights / sum(weights)
-        sqweights = power(norm_weights, 2)
-        return 1 / sum(sqweights)
 
     def getEvidence(self, thetalogweights, loglike):
         """

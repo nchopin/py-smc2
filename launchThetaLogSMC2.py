@@ -29,7 +29,7 @@ from src.sopf import SOPF
 from src.bsmc import BSMC
 from src.adpmcmc import AdaptivePMCMC
 from snippets.localfolder import get_path
-import userfile as userfile
+import userfileThetaLogSMC2 as userfile
 
 userfilefile = open("userfile.py", "r")
 userfilecontent = userfilefile.read()
@@ -101,30 +101,25 @@ if len(userfile.SAVINGTIMES) > 0:
 # launching algorithm
 if userfile.PROFILING:
     import cProfile
-    counter = 0
-    tempproffile = "/tmp/prof(%i)" % counter
-    while os.path.isfile(tempproffile):
-        counter += 1
-        tempproffile = "/tmp/prof(%i)" % counter
     if userfile.METHOD == "SMC2":
         cProfile.run("""\
 algo = SMCsquare(model, algorithmparameters, \
 dynamicNx = userfile.DYNAMICNX, savingtimes = userfile.SAVINGTIMES)\
-    """, tempproffile)
+    """, "prof")
     elif userfile.METHOD == "SOPF":
         cProfile.run("""\
 algo = SOPF(model, algorithmparameters, savingtimes = userfile.SAVINGTIMES)\
-    """, tempproffile)
+    """, "prof")
     elif userfile.METHOD == "BSMC":
         cProfile.run("""\
 algo = BSMC(model, algorithmparameters, savingtimes = userfile.SAVINGTIMES)\
-    """, tempproffile)
+    """, "prof")
     elif userfile.METHOD == "adPMCMC":
         cProfile.run("""\
 algo = AdaptivePMCMC(model, algorithmparameters)\
-    """, tempproffile)
+    """, "prof")
     import pstats
-    p = pstats.Stats(tempproffile)
+    p = pstats.Stats('prof')
     p.sort_stats("cumulative").print_stats(10)
     p.sort_stats("time").print_stats(10)
 else:
@@ -161,9 +156,9 @@ else:
     else:
         prefix = "%s" % userfile.METHOD
     if userfile.DYNAMICNX and userfile.METHOD == "SMC2":
-        basename = "%s-T%i-%s-dynamicNx%i-Ntheta%i" % (prefix, userfile.T, userfile.PROPOSALKERNEL, userfile.NX, userfile.NTHETA)
+        basename = "%s-T%i-dynamicNx%i-Nth%i" % (prefix, userfile.T, userfile.NX, userfile.NTHETA)
     elif not(userfile.DYNAMICNX) and userfile.METHOD == "SMC2":
-        basename = "%s-T%i-%s-Nx%i-Ntheta%i" % (prefix, userfile.T, userfile.PROPOSALKERNEL, userfile.NX, userfile.NTHETA)
+        basename = "%s-T%i-Nx%i-Nth%i" % (prefix, userfile.T, userfile.NX, userfile.NTHETA)
     elif userfile.METHOD == "SOPF":
         basename = "%s-T%i-N%i" % (prefix, userfile.T, userfile.NSOPF)
     elif userfile.METHOD == "BSMC":
@@ -171,51 +166,49 @@ else:
     else:
         basename = "%s-T%i" % (prefix, userfile.T)
 if userfile.REPLACEFILE:
-    resultsfile = os.path.join(resultsfolder, basename)
+    resultsfile = os.path.join(resultsfolder, "%s.cpickle" % basename)
 else:
+    checkcpickle = os.path.join(resultsfolder, "%s(0).cpickle" % basename)
+    checkRData = os.path.join(resultsfolder, "%s(0).RData" % basename)
     counter = 0
-    currentname = "%s(%i)" % (basename, counter)
-    filelist = os.listdir(resultsfolder)
-    while len([x for x in filelist if x.startswith(currentname)]) > 0:
+    while os.path.isfile(checkcpickle) or os.path.isfile(checkRData):
         counter += 1
-        currentname = "%s(%i)" % (basename, counter)
-    resultsfile = os.path.join(resultsfolder, currentname)
-print "Saving results in %s*..." % resultsfile
+        checkcpickle = os.path.join(resultsfolder, "%s(%i).cpickle" % (basename, counter))
+        checkRData = os.path.join(resultsfolder, "%s(%i).RData" % (basename, counter))
+    resultsfile = checkcpickle
+print "Saving results in %s..." % resultsfile
 
-copyuserfile = resultsfile + "-userfile.py"
+copyuserfile = resultsfile.replace(".cpickle", "-userfile.py")
 print "Copying userfile to %s..." % copyuserfile
 userfilefile = open(copyuserfile, "w")
 userfilefile.write(userfilecontent)
 userfilefile.close()
 
 if userfile.PROFILING:
-    profilepath = resultsfile + "-profile.txt"
+    profilepath = resultsfile.replace(".cpickle", "-profile.txt")
     print "Copying profile to %s..." % profilepath
     profilefile = open(profilepath, "w")
-    p = pstats.Stats(tempproffile, stream = profilefile)
+    p = pstats.Stats('prof', stream = profilefile)
     p.sort_stats("cumulative").print_stats(50)
     p.sort_stats("time").print_stats(50)
     profilefile.close()
-    os.remove(tempproffile)
+    os.remove("prof")
 
 resultsDict = algo.getResults()
 
-if "cpickle" in userfile.RESULTSFILETYPE:
-    import cPickle
-    f = open(resultsfile + ".cpickle", "w")
-    cPickle.dump(resultsDict, f)
-    f.close()
+import cPickle
+f = open(resultsfile, "w")
+cPickle.dump(resultsDict, f)
+f.close()
 
 if "RData" in userfile.RESULTSFILETYPE:
-    RDatafile = resultsfile + ".RData"
-    try:
-        import rpy2
-        from snippets.pickletoRdata import dictionary2RDataWithRPY 
-        dictionary2RDataWithRPY(resultsDict, RDatafilename = RDatafile)
-    except ImportError:
-        print "I'd recommend installing rpy2 for faster saving of the results in RData..."
-        from snippets.pickletoRdata import dictionary2RDataWithoutRPY
-        dictionary2RDataWithoutRPY(resultsDict, RDatafilename = RDatafile)
+    from snippets.pickletoRdata import pickle2RData
+    ## wait RDatafile looks kinda useless now
+    RDatafile = resultsfile.replace(".cpickle", ".RData")
+    print "...and saving results in %s..." % RDatafile
+    pickle2RData(resultsfile)
+if not("cpickle" in userfile.RESULTSFILETYPE):
+    os.remove(resultsfile)
 
 if userfile.GENERATERFILE:
     if not("RData" in userfile.RESULTSFILETYPE):
@@ -240,7 +233,8 @@ if userfile.GENERATERFILE:
     plotter.everything()
     if userfile.PLOT:
         import subprocess
-        subprocess.call(["R", "CMD", "BATCH", "--vanilla", plotter.plotresultsfile, "/dev/null"])
+        subprocess.call(["R", "CMD", "BATCH", "--vanilla", \
+                plotter.plotresultsfile, os.path.join(resultsfolder, "/tmp/R-output.out")])
 
 print "...done! Bye."
 
