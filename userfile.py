@@ -20,7 +20,11 @@
 # -*- coding: utf-8 -*-
 
 # Requirements: python, numpy, a functional scipy.weave # (hence a C compiler installed and configured)
-# Optional but useful: R, ggplot2 (for the plots)
+# Optional but useful: R, ggplot2 (for the plots), rpy2
+# Very optional: CUDA (for the model files with their names finishing by "CUDA")
+
+# If RANDOMSEED is True, a new seed is used at each run, otherwise it's fixed (for debugging purposes)
+RANDOMSEED = True
 
 ##########################
 ####  USER PARAMETERS ####
@@ -36,8 +40,8 @@
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "thetalogistic"
-T = 10
+MODEL = "periodic"
+T = 250
 #DATASET = "athletics-best-two"
 DATASET = "synthetic"
 
@@ -51,14 +55,14 @@ DATASET = "synthetic"
 ### (see below for explanations)
 ##########################
 
-METHOD = "SMC2"
+METHOD = "BSMC"
 
 ##########################
 ### Plot options
 # Generate R file to plot results (does not require R)
 GENERATERFILE = True
 ## Generate pdf figures using the R file (requires R and package "ggplot2")
-PLOT = True
+PLOT = False
 
 ###
 ##########################
@@ -69,10 +73,10 @@ PLOT = True
 # PROPOSALKERNEL can be either "randomwalk" or "independent".
 # ESSTHRESHOLD: resample-move steps are triggered when the ESS goes below ESSTHRESHOLD.
 ###
-NTHETA = 1000 
+NTHETA = 1000
 NX = 250
-DYNAMICNX = False
-PROPOSALKERNEL = "randomwalk"
+DYNAMICNX = True
+PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
 ##########################
 ### Advancer parameters for SMC2
@@ -97,7 +101,7 @@ NSOPF = 100000
 ### BSMC algorithm parameters
 # If you want to try the BSMC algorithm to compare the results,
 # specify the number of particles here:
-NBSMC = 100000
+NBSMC = 500000
 # specify the "h" factor used in the kernel density approximation
 # of the distribution of the parameters given the data
 # should be "slowly decreasing with N", N being the number of particles
@@ -122,6 +126,7 @@ TPMCMC = 1000
 # in the models/ subfolder. Provided models are: 
 # - locallevel: basic linear gaussian SSM
 # - thetalogistic: population model with non linear hidden process (Polansky's parameterization)
+# - periodic: highly non linear model from Gordon Salmond and Smith
 # - SVonefactor: SV stands for stochastic volatility. This model is the one factor model.
 # - SVfixedrho: this one is the two factor model without leverage (rho_1 = rho_2 = 0)
 # - SVmultifactor: this one is the two factor model with leverage
@@ -163,7 +168,7 @@ RESULTSFILENAME = ""
 REPLACEFILE = False
 # Use subfolders for each model and each dataset to organize the results.
 # If False, use long names and store the results at the root of the results/ folder.
-USESUBFOLDERS = False 
+USESUBFOLDERS = True 
 # RESULTSFILETYPE could include "RData" and "cpickle".
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs

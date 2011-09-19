@@ -22,13 +22,12 @@
 from __future__ import division
 from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
-        array, zeros_like, newaxis
+        array, zeros_like, newaxis, float32, int32 
 from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
 import math
 from src.models import SSM
-from snippets.localfolder import get_path
 
 ############################################
 ## Population Dynamic model, parameterization of Polansky et al. (2009)

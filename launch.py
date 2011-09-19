@@ -35,7 +35,8 @@ userfilefile = open("userfile.py", "r")
 userfilecontent = userfilefile.read()
 userfilefile.close()
 
-#random.seed(127)
+if not(userfile.RANDOMSEED):
+    random.seed(127)
 
 THISPATH = get_path()
 
@@ -49,7 +50,8 @@ f, filename, description = imp.find_module(thetamodulename)
 thetamodule = imp.load_module("thetamodule", f, filename, description)
 
 if userfile.DATASET == "synthetic":
-    syntheticdatasetpath = os.path.join(THISPATH, "data/%s-syntheticdata.R" % userfile.MODEL)
+    datasetname = userfile.MODEL.replace("CUDA", "")
+    syntheticdatasetpath = os.path.join(THISPATH, "data/%s-syntheticdata.R" % datasetname)
     if os.path.isfile(syntheticdatasetpath):
         xmodule.modelx.loadData(syntheticdatasetpath)
     else:
