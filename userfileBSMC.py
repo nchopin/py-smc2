@@ -20,7 +20,11 @@
 # -*- coding: utf-8 -*-
 
 # Requirements: python, numpy, a functional scipy.weave # (hence a C compiler installed and configured)
-# Optional but useful: R, ggplot2 (for the plots)
+# Optional but useful: R, ggplot2 (for the plots), rpy2
+# Very optional: CUDA (for the model files with their names finishing by "CUDA")
+
+# If RANDOMSEED is True, a new seed is used at each run, otherwise it's fixed (for debugging purposes)
+RANDOMSEED = True
 
 ##########################
 ####  USER PARAMETERS ####
@@ -36,9 +40,8 @@
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "thetalogistic"
-T = 1000
-#DATASET = "athletics-best-two"
+MODEL = "SVonefactor"
+T = 500
 DATASET = "synthetic"
 
 ##########################
@@ -51,7 +54,7 @@ DATASET = "synthetic"
 ### (see below for explanations)
 ##########################
 
-METHOD = "SMC2"
+METHOD = "BSMC"
 
 ##########################
 ### Plot options
@@ -69,17 +72,17 @@ PLOT = True
 # PROPOSALKERNEL can be either "randomwalk" or "independent".
 # ESSTHRESHOLD: resample-move steps are triggered when the ESS goes below ESSTHRESHOLD.
 ###
-NTHETA = 1000 
-NX = 250
+NTHETA = 1000
+NX = 125
 DYNAMICNX = True
-PROPOSALKERNEL = "randomwalk"
+PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
 ##########################
 ### Advancer parameters for SMC2
 ## If DYNAMICNX, acceptance rate limit:
 DYNAMICNXTHRESHOLD = 0.2
 ## If DYNAMICNX, maximum number of x-particles allowed:
-NXLIMIT = 1000
+NXLIMIT = 5000
 ## If PROPOSALKERNEL == "randomwalk",
 ## the random walk has variance RWVARIANCE * Cov(theta-particles).
 RWVARIANCE = 0.1
@@ -97,7 +100,7 @@ NSOPF = 100000
 ### BSMC algorithm parameters
 # If you want to try the BSMC algorithm to compare the results,
 # specify the number of particles here:
-NBSMC = 100000
+NBSMC = 250000
 # specify the "h" factor used in the kernel density approximation
 # of the distribution of the parameters given the data
 # should be "slowly decreasing with N", N being the number of particles
@@ -122,6 +125,7 @@ TPMCMC = 1000
 # in the models/ subfolder. Provided models are: 
 # - locallevel: basic linear gaussian SSM
 # - thetalogistic: population model with non linear hidden process (Polansky's parameterization)
+# - periodic: highly non linear model from Gordon Salmond and Smith
 # - SVonefactor: SV stands for stochastic volatility. This model is the one factor model.
 # - SVfixedrho: this one is the two factor model without leverage (rho_1 = rho_2 = 0)
 # - SVmultifactor: this one is the two factor model with leverage
@@ -146,9 +150,11 @@ TPMCMC = 1000
 # (useful when doing sequential analysis).
 # The final time T = number of observations is automatically saved,
 # no need to add it to the list.
+#SAVINGTIMES = [250, 500, 750]
 SAVINGTIMES = []
 SMOOOTHING = False
 FILTERING = False
+PREDICTION = True
 SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 
@@ -157,13 +163,13 @@ PROFILING = True
 
 # Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.
-RESULTSFILENAME = ""
+RESULTSFILENAME = "tempBSMC"
 # Replace already existing files; if False,
 # a counter will be added to the result file name, so that no existing files are erased.
-REPLACEFILE = False
+REPLACEFILE = True
 # Use subfolders for each model and each dataset to organize the results.
 # If False, use long names and store the results at the root of the results/ folder.
-USESUBFOLDERS = True
+USESUBFOLDERS = False
 # RESULTSFILETYPE could include "RData" and "cpickle".
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs
