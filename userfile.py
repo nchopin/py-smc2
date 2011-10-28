@@ -40,10 +40,10 @@ RANDOMSEED = True
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "SVonefactor"
-T = 1500
+MODEL = "locallevel"
+T = 15
 #DATASET = "SP500recent"
-DATASET = "SP500recentyears"
+DATASET = "synthetic"
 
 ##########################
 ### METHOD
@@ -151,11 +151,11 @@ TPMCMC = 1000
 # (useful when doing sequential analysis).
 # The final time T = number of observations is automatically saved,
 # no need to add it to the list.
-SAVINGTIMES = [250, 500, 750]
-#SAVINGTIMES = []
+#SAVINGTIMES = [250, 500, 750]
+SAVINGTIMES = []
 SMOOOTHING = False
 FILTERING = False
-PREDICTION = True
+PREDICTION = False
 SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 

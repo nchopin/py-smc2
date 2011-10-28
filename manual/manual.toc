@@ -1,6 +1,11 @@
-\contentsline {section}{\numberline {1}Parameters}{1}
-\contentsline {subsection}{\numberline {1.1}Important ones}{1}
-\contentsline {subsection}{\numberline {1.2}Less important ones}{1}
-\contentsline {section}{\numberline {2}Models}{1}
-\contentsline {subsection}{\numberline {2.1}Understand models}{1}
-\contentsline {subsection}{\numberline {2.2}Making your own models}{1}
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}What's in there}{2}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}What's a state space model}{2}{subsection.1.2}
+\contentsline {section}{\numberline {2}Quick start-up guide}{3}{section.2}
+\contentsline {subsection}{\numberline {2.1}Installation}{3}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}The user file}{4}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Launching the program}{5}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Understanding more: file structure}{6}{subsection.2.4}
+\contentsline {section}{\numberline {3}Using the package for your own purpose}{7}{section.3}
+\contentsline {subsection}{\numberline {3.1}Making your own models}{7}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Adding your data files}{7}{subsection.3.2}

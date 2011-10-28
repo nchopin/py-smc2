@@ -14,26 +14,220 @@
 \usepackage{listings}
 \usepackage{subfigure}
 \usepackage{xspace}
+\usepackage{hyperref}
+\usepackage{listings}
 \usepackage{algorithm, algorithmic}
-
+\lstset{frame=shadowbox, rulesepcolor=\color{blue}}
 \title{py-SMC$^2$}
 \author{User manual}
+\newcommand{\pysmc}{\texttt{py-smc2}\xspace}
 
 \begin{document}
 
- \maketitle
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+This note intends to show how to use the \pysmc package. 
+
+\subsection{What's in there}
+
+This package
+implements various methods to perform Bayesian inference in state space models.
+It focuses on SMC$^2$, a method presented in \emph{SMC$^2$: A sequential Monte Carlo algorithm with particle Markov chain Monte Carlo updates}, by
+Nicolas Chopin, Pierre E. Jacob, Omiros Papaspiliopoulos.
+The article is available on arXiv at this address:
+\begin{quote}
+\href{http://arxiv.org/abs/1101.1528}{http://arxiv.org/abs/1101.1528}
+\end{quote}
 
 
-\section{Parameters}
+For comparison, other methods are implemented:
+\begin{itemize}
+ \item \emph{Particle Markov Chain Monte Carlo} by Andrieu, Doucet and Holenstein (2010, Journal of the Royal Statistical Society, Series B, 72:269-342):
+\begin{quote}
+\href{http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.162.2808&rep=rep1&type=pdf}{CiteSeerx link}
+\end{quote}
+This MCMC method allows to sample from the posterior distribution of a state space model, but not sequentially.
+The package implements the Particle Marginal Metropolis--Hastings (PMMH) algorithm, not the Particle Gibbs.
+We also added the adaptive proposal (as in adaptive Metropolis--Hastings, where a specific acceptance rate is targeted),
+following various recent articles.
+\item \emph{Combining Parameter and State Estimation in Simulation-Based Filtering}, by Liu and West.
+In A. Doucet, N. de Freitas, and N. J. Gordon, editors, Sequential Monte Carlo Methods in Practice, pages 197-224. Springer, New York.
+This method allows to sample from the posterior distributions sequentially, like SMC$^2$ does. This method is referred to in the package as ``BSMC''.
+\item \emph{A self-organizing state-space model} by G Kitagawa (Journal of the American Statistical Association, 1998).
+This is like a simpler version of BSMC, where the parameters are reweighted but not moved.
+\end{itemize}
 
-\subsection{Important ones}
+\subsection{What's a state space model}
 
-\subsection{Less important ones}
+Sometimes also referred to as Hidden Markov Chain model, but here the latent process can be defined on continuous spaces.
 
-\section{Models}
+The observations are denoted by $y_1, \ldots y_T$. Throughout this note $y_{k:l} := y_k, \ldots, y_l$.
+In a state space models the observations are supposed to be dependent, through a hidden process $(x_t)$. We first set 
+an initial distribution for $x_0$:
+\[x_0 \sim \mu_\theta(\cdot)\]
+Then the process evolves through its ``dynamics'':
+\[x_t \sim f_\theta(\cdot \vert x_{t-1})\]
+And the observations are supposed to be drawn from a ``measure'' distribution:
+\[y_t \sim g_\theta(\cdot \vert x_t)\]
+Note that these functions are indexed by $\theta$, referred to as the parameter. The parameter lives in $\Theta \subset \mathbb{R}^d$.
+For convenience, we assume that we can transform the parameters so that $\Theta = \mathbb{R}^d$ (that's a requirement of the package
+but not of the method in its full generality).
 
-\subsection{Understand models}
+We are interested in the cases where:
+\begin{itemize}
+ \item we can sample from $\mu_\theta$
+ \item we can sample from $f_\theta(\cdot \vert x_{t-1})$
+ \item we can compute $g_\theta(y_t\vert x_t)$ up to a multiplicative constant.
+\end{itemize}
+
+And we are interested in estimating the parameters $\theta$, as well as finding the hidden process $(x_t)$. We are also interested
+in byproducts of this estimation problem, for instance in model comparison, prediction, any functional of the hidden states, smoothing, etc. 
+
+\section{Quick start-up guide}
+
+\subsection{Installation}
+
+The package is coded in python and there are no binaries, hence requires python\ldots
+
+Also it requires the following:
+\begin{itemize}
+ \item \texttt{numpy}, \texttt{scipy} (usually packaged as \texttt{python-numpy}, \texttt{python-scipy}),
+ \item The package makes extensive use of \texttt{scipy.weave}, in particular of the function inline. It is installed along with \texttt{scipy}. However for it to work you also 
+need a C compiler like \texttt{gcc}. Hence make sure you have the latest version of \texttt{gcc}.
+ \item \texttt{Rpy2} does not hurt but is not required (mainly if you have it installed, something at some point will be computed quicker),
+ \item \texttt{R} is required for the graphs, but you can disable the graph part (see the \texttt{PLOT} option, in the next section). 
+The \texttt{ggplot2} package is also required, so once you've installed \texttt{R}, install this package by launching:
+\begin{lstlisting}
+ install.packages("ggplot2")
+\end{lstlisting}
+\end{itemize}
+
+Once you have all this, simply extract the package (you can find the zip archive on the Google Code webpage):
+\begin{quote}
+ \href{http://code.google.com/p/py-smc2/downloads/list}{http://code.google.com/p/py-smc2/downloads/list}
+\end{quote}
+
+or fetch it using \texttt{hg} like this in a terminal:
+\begin{lstlisting}
+hg clone https://code.google.com/p/py-smc2/
+\end{lstlisting}
+
+To try if the package works, launch the program from the root folder in a terminal:
+\begin{center}
+ \begin{lstlisting}
+ python launch.py
+\end{lstlisting}
+\end{center}
+
+If the package does not work (ie you see errors in the terminal after having launched the previous command), it is probably because of \texttt{scipy.weave}. So make sure you can use \texttt{scipy.weave} before 
+investigating further. I would recommend going there:
+\href{http://www.scipy.org/PerformancePython}{http://www.scipy.org/PerformancePython}
+and checking whether you can make the \texttt{scipy.weave.inline} snippet work on your system.
+
+\subsection{The user file}
+
+The file \texttt{userfile.py} is the first file you should look at. It is not really code, but merely 
+algorithmic parameters. The important ones are the following:
+\begin{itemize}
+ \item \texttt{MODEL}: it should be a string indicating a state-space model. Each model has two files in the \texttt{models} subfolder. For instance
+\texttt{locallevel} is described by \texttt{locallevelx.py} and \texttt{localleveltheta.py}. The list of models currently available is:
+\begin{itemize}
+ \item \texttt{locallevel} : a simple local level model with two parameters: the variance of the hidden random walk, and the variance of the measurement function.
+ \item \texttt{periodic}: a non-linear gaussian model as in Gordon, Salmond and Smith 1993.
+ \item \texttt{athletics}: the model used in the paper for modelling athletics records (with a GEV measurement function and a second order random walk for the hidden process)
+ \item \texttt{thetalogistic}: an ecological model for predicting population sizes; it is highly non-linear and gaussian.
+ \item \texttt{SVonefactor}: the Stochastic volatility model used in the paper.
+ \item \texttt{SVfixedrho}, \texttt{SVwithFixedParameters}, \texttt{SVmultifactor}: variations of the above.
+\end{itemize}
+(forget about the models finishing with \texttt{CUDA} for now)
+\item \texttt{T}: the number of observations to take into account. For testing, set a small value like 10 (if it does not work for 10, it won't work for more!).
+\item \texttt{DATASET}: a string indicating the data set to use. If you put \texttt{synthetic} then a new data set will be simulated from the model.
+You can browse in the \texttt{data} subfolder to see the different data sets available; their filenames finish by \texttt{.R}. Let's put \texttt{synthetic} there for starters.
+\item \texttt{METHOD}: a string indicating the method. Currently there are:
+\begin{itemize}
+ \item \texttt{SMC2}
+ \item \texttt{SOPF}
+ \item \texttt{BSMC}
+ \item \texttt{adPMCMC}
+\end{itemize}
+For now let us suppose that you want to try SMC$^2$, so put \texttt{SMC2} there for starters.
+\end{itemize}
+
+That's enough to get the main idea. Then of course you might want to tweak the algorithmic settings, which are different for each method.
+For SMC$^2$, the most important ones are:
+\begin{itemize}
+ \item \texttt{NTHETA}: the number of $\theta$-particles. A good default is to put the maximum between 1000 and the number of observations.
+ \item \texttt{NX}: the number of $x$-particles attached to each $\theta$-particle.
+ \item \texttt{DYNAMICNX}: a boolean (\texttt{True} or \texttt{False} in python, beware of the upper-case first letter) indicating whether the number of $x$-particles should
+increase along the iterations or not. If it is set to \texttt{True}, then when the acceptance rate of the PMMH moves goes below \texttt{DYNAMICNXTHRESHOLD}, the number
+of $x$-particles is multiplied by two.
+\end{itemize}
+
+Finally, there are various other parameters you might be interested in:
+\begin{itemize}
+ \item \texttt{SAVINGTIMES}: should be a list of integers, at which the results (ie the weighted particles) should be stored. By default it is empty, but suppose
+that you want to do sequential analysis, that's where you should specify it. Note that some things are stored at each iteration anyway, like the ESS and the evidence.
+ \item \texttt{PROFILING}: a boolean (\texttt{True} or \texttt{False}) indicating whether the computing time should be reported in a separate file. It slightly slows down the program
+but it is most often interesting.
+ \item \texttt{PLOT}: a boolean (\texttt{True} or \texttt{False}) indicating whether results should be presented in graphs. By default the program creates a R file (\texttt{GENERATERFILE} is True),
+and if \texttt{PLOT} is enabled, then the \texttt{R} file is launched at the end. So you can directly look at a pdf file in the \texttt{results} subfolder, and see the various posteriors, the ESS along the iterations, etc. If you have not installed \texttt{R}, then you should disable this, otherwise it will result in an error (but your results will still be saved).
+\end{itemize}
+
+The other parameters in \texttt{userfile.py} are pretty self-explanatory. Some are used only if some other method is used (\texttt{SOPF}, \texttt{BSMC}, \texttt{adPMCMC}).
+Some would deserve explanations in a future version of this manual (like \texttt{SMOOTHING}, or \texttt{PREDICTION}).
+
+\subsection{Launching the program}
+
+Once the user file is set-up, how to launch it? First make sure you saved the user file (its name should be \texttt{userfile.py}) if you made any change to it.
+
+Then launch a terminal, go in the root folder of the package and type
+\begin{center}
+ \begin{lstlisting}
+ python launch.py
+\end{lstlisting}
+\end{center}
+
+The file \texttt{launch.py} should not be modified: only \texttt{userfile.py} should be changed. The file \texttt{launch.py} basically analyses \texttt{userfile.py}, and then call the right functions in the right order. These core functions are in the \texttt{src} subfolder, but shouldn't be modified or called directly in most cases. The user file is made precisely so that the user does not have to handle the core functions.
+
+During the program you are able to follow the algorithm's progression. If you set up the parameters so that it should be fast (small \texttt{T}, small \texttt{NTHETA}, small \texttt{NX}), then it should take a few seconds. For bigger parameters values, the program can take hours (for any of the proposed methods), so be sure that you set up
+the parameters right before launching. The computing time can also be very different from one model to the other (the stochastic volatility models being the slowest of the proposed models).
+
+\subsection{Understanding more: file structure}
+
+The \pysmc package is organized as follows:
+\begin{itemize}
+ \item the root folder contains mainly \texttt{userfile.py} and \texttt{launch.py}. The user file is the one file that should be modified by most users.
+The launch file is there to be executed but not modified.
+ \item \texttt{data} subfolder: where the data sets should be. There are the files finishing by \texttt{.R}. There are not actually \texttt{R} code files
+but simple text files with one value per line. Open \texttt{anisus.R} or \texttt{nutria.R} for simplest examples. If you want to add a new data set,
+add a file in this subfolder, with the \texttt{.R} file extension. You can then specify it in the \texttt{DATASET} entry of the user file (without the extension), as we saw earlier. For example, if you add \texttt{foo.R} in the \texttt{data} subfolder, put \texttt{DATASET = "foo"} in the user file.
+ \item \texttt{manual} subfolder: where this manual is.
+ \item \texttt{models} subfolder: where the model files are. There are two files for each model: for a model \texttt{foo}, there would be \texttt{foox.py} and 
+\texttt{footheta.py}. The file finishing in \texttt{x.py} mainly described the dynamics of the hidden process and the measurement function. The file finishing
+in \texttt{theta.py} describes the transformations made the parameters so that $\Theta = \mathbb{R}^d$ and the prior distribution on the parameters.
+ \item \texttt{results} subfolder: when the program is launched, it creates subfolders in this folder. In the subfolder, various files describe the results.
+ Some files just store the results (stored by default in \texttt{.RData} format). If enabled, the profiling is stored in a separate file (finishing by \texttt{-profile.txt}). The user file is copied in this subfolder too, so that one knows which parameters produced the given results (file finishing by \texttt{-userfile.py}). An \texttt{R} file is created (file finishing by \texttt{-plots.R}). This file, when launched, produces graphs. If it was launched by the program
+(option \texttt{PLOT} set to \texttt{True}), then a pdf file is already in the subfolder. If not, then launching the \texttt{R} file creates the pdf file.
+The \texttt{R} file is also informative if you want to know precisely how the results are stored. Executing the \texttt{R} file line by line should be enlightening to most advanced users.
+ \item \texttt{rgraphs} subfolder: this messy folder stores the code to create more complicated graphs, involving model comparison or method comparison. They are not supposed to work directly, but only after the program has been launched a few times with specific settings and result files are available. Most users should avoid this folder.
+ \item \texttt{snippets} subfolder: this groups python functions needed by the program but totally unrelated to statistics.
+ \item \texttt{src} subfolder: this is the main code folder, with the various methods, the model handling, the generation of R files, etc. This is 
+all in python, with bits in C using \texttt{weave.inline}.
+ \item \texttt{test} subfolder: this is a folder to test bits of code before incorporating them in the main files. Not interesting for most users.
+\end{itemize}
+
+
+\section{Using the package for your own purpose}
 
 \subsection{Making your own models}
+
+Easiest way would be to copy and paste model files and customize them. The simplest model to start from is the local level model.
+
+\subsection{Adding your data files}
+
 
 \end{document}

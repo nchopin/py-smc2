@@ -14,6 +14,8 @@ test*R
 *.tex~
 *.toc
 *.log
+*.out
+*.backup
 *.aux
 *.pyc
 *-userfile.py

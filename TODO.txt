@@ -1,9 +1,6 @@
  - ajouter aux resultats de SMC2 le nombre d'appel a TransitionAndWeights
  en comptant tout (ie y compris les etapes de PMCMC)
  - faire un launcher pour lancer N fois un algo et faire des plots R comparant les resultats.
- - particle Gibbs ?
- - tempered distributions ? 
  - enlever les init distrib
- - rajouter la possibilité de calculer les intervalles de confiance prédictifs
 
 
