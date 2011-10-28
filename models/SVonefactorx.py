@@ -24,6 +24,7 @@ from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
         array, zeros_like, newaxis
 from numpy import sum as numpysum
+from numpy import max as numpymax
 from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
@@ -50,6 +51,8 @@ from snippets.localfolder import get_path
 # parameters[2, :] = xi
 # parameters[3, :] = omega^2
 # parameters[4, :] = lambda
+# 0 0 0.5 0.0625 0.01
+# lambda * xi^2 / omega^2 = 0.01 * 0.25 / (0.0625) = 0.04
 ############################################
 
 ### these functions take untransformed parameters as arguments
@@ -59,8 +62,8 @@ def firstStateGenerator(parameters, size):
     first_state[:, 1] = random.gamma(size = size, shape = (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
     return first_state
 def observationGenerator(states, parameters):
-    return random.normal(size = states.shape[0], loc = parameters[0] + parameters[1] * states[:, 0], scale = sqrt(abs(states[:, 0])))[:, newaxis]
-
+    return random.normal(size = states.shape[0], loc = parameters[0] + parameters[1] * states[:, 0], \
+            scale = sqrt(abs(states[:, 0])))[:, newaxis]
 def subtransitionAndWeight(states, y, parameters, alluniforms, allK):
     code = \
     """
@@ -109,9 +112,23 @@ def transitionAndWeight(states, y, parameters, t):
     newstates = zeros_like(states)
     # --------------
     poissonparameters = parameters[4, :] * (parameters[2, :]**2) / parameters[3, :]
-    poissonparameters = repeat(poissonparameters[:,newaxis], Nx, axis = 1)
+    #poissonparameters = repeat(poissonparameters[:,newaxis], Nx, axis = 1)
+    #print "\n", poissonparameters.shape
+    #print poissonparameters[0:10, 0:10]
+    #raw_input("Press ENTER to exit")
     for indextheta in range(Ntheta):
-        allK = random.poisson(lam = poissonparameters[indextheta,:])
+        #print poissonparameters[indextheta,:]
+        #allK = random.poisson(lam = poissonparameters[indextheta,:], size = Nx)
+        allK = random.poisson(lam = poissonparameters[indextheta], size = Nx)
+        #print allK
+        #raw_input("")
+        #if (numpymax(allK) > 10**4):
+        #    print "\n ! number of variables to generate for some theta-particle:", t, indextheta, numpymax(allK)
+        # the following prevents computational issues while not changing the results,
+        # since parameters such that allK > 10**4 are very very likely to have small weights
+        # alternatively this fix can be seen as a modification of the model where
+        # the poisson law is replaced by a truncated poisson law
+        allK[allK > 10**4] = 10**4
         allK = array(allK).reshape(Nx)
         sumK = sum(allK)
         alluniforms = random.uniform(size = 2 * sumK)
@@ -129,10 +146,31 @@ modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
 modelx.parameters = array([0, 0, 0.5, 0.0625, 0.01])
+# filtering
 def firststate(xparticles, thetaparticles, t):
     return xparticles[:, 0, :]
 def secondstate(xparticles, thetaparticles, t):
     return xparticles[:, 1, :]
 modelx.functionals = {"firststate": firststate, "secondstate": secondstate}
+# prediction
+def predictionlowquantile(xparticles, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros((Nx, Ntheta))
+    lowquantile = -1.95996398454
+    for k in range(Nx):
+        result[k, :] = thetaparticles[0, :] + thetaparticles[1, :] * xparticles[k, 0, :] + \
+                       sqrt(abs(xparticles[k, 0, :])) * lowquantile
+    return result
+def predictionhiquantile(xparticles, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros((Nx, Ntheta))
+    hiquantile = +1.95996398454
+    for k in range(Nx):
+        result[k, :] = thetaparticles[0, :] + thetaparticles[1, :] * xparticles[k, 0, :] + \
+                       sqrt(abs(xparticles[k, 0, :])) * hiquantile 
+    return result
+modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
 
 

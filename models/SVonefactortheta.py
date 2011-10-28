@@ -58,17 +58,12 @@ def rprior(size, hyperparameters):
 
 def rInitDistribution(size):
     """ returns untransformed parameters """
-    mu = norm.rvs(size = size, loc = 0, scale = sqrt(2))
-    beta = norm.rvs(size = size, loc = 0, scale = sqrt(2))
-    xi = random.exponential(scale = 1, size = size)
-    omega2 = random.exponential(scale = 1, size = size)
-    lamb = random.exponential(scale = 1, size = size)
     parameters = zeros((5, size))
-    parameters[0, :] = mu
-    parameters[1, :] = beta
-    parameters[2, :] = xi
-    parameters[3, :] = omega2
-    parameters[4, :] = lamb
+    parameters[0, :] = norm.rvs(size = size, loc = 0, scale = sqrt(2))
+    parameters[1, :] = norm.rvs(size = size, loc = 0, scale = sqrt(2))
+    parameters[2, :] = random.exponential(scale = 1, size = size)
+    parameters[3, :] = random.exponential(scale = 1, size = size)
+    parameters[4, :] = random.exponential(scale = 1, size = size)
     return parameters
 
 def dInitDistribution(parameters):
@@ -92,7 +87,7 @@ modeltheta = ParameterModel(name = "SV one-factor", dimension = 5)
 modeltheta.setHyperparameters(hyperparameters)
 modeltheta.setPriorlogdensity(logdprior)
 modeltheta.setPriorgenerator(rprior)
-modeltheta.setInitDistribution(rInitDistribution, dInitDistribution)
+#modeltheta.setInitDistribution(rInitDistribution, dInitDistribution)
 modeltheta.setParameterNames(["expression(mu)", "expression(beta)", \
         "expression(xi)", "expression(omega^2)", "expression(lambda)"])
 modeltheta.setTransformation(["none", "none", "log", "log", "log"])
@@ -103,6 +98,15 @@ modeltheta.setRprior(["priorfunction <- function(x) dnorm(x, sd = %.5f)" % hyper
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["xi_rate"], \
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["omega2_rate"], \
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["lambda_rate"]])
+modeltheta.additionalPlots = """
+if ("predictedlowquantile" %in% ls() && "predictedhiquantile" %in% ls()){
+    g <- qplot(x = 1:T, y = observations, geom = "line")
+    g <- g + geom_line(aes(y = predictedlowquantile), colour = "red")
+    g <- g + geom_line(aes(y = predictedhiquantile), colour = "green")
+    g <- g + xlab("time") + ylab("observations")
+    print(g)
+}
+"""
 
 
 

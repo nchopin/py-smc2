@@ -28,6 +28,7 @@ from numpy import random, power, sqrt, exp, zeros, \
 from scipy.stats import norm
 from resampling import IndResample, IndResample2D
 from parallelSIRs import ParallelSIRs
+from various import progressbar
 
 class AdaptivePMCMC:
     def __init__(self, model, algorithmparameters, autoinit = True):
@@ -64,7 +65,10 @@ class AdaptivePMCMC:
         if autoinit:
             self.allsteps()
     def PMCMCstep(self, iteration):
-        print "iteration %i, acceptance rate until now: %.3f" % (iteration, sum(self.acceptations[0:iteration]) / iteration)
+        #progressbar(iteration / (self.nbiterations - 1))
+        progressbar(iteration / (self.nbiterations - 1), text = " acceptance rate: %.3f" % \
+                (sum(self.acceptations[0:iteration]) / iteration))
+        #print "iteration %i, acceptance rate until now: %.3f" % (iteration, sum(self.acceptations[0:iteration]) / iteration)
         if (random.uniform(size = 1) < self.proposalmixtureweights[0]):
             transformedthetastar = self.modeltheta.proposal(self.transformedtheta[:, newaxis], self.fixedproposalcovmatrix)[:, 0]
         else:
@@ -77,6 +81,10 @@ class AdaptivePMCMC:
         proposedlogomega = proposedloglike + self.modeltheta.priorlogdensity(transformedthetastar)
         currentlogomega = self.totalLogLike + self.modeltheta.priorlogdensity(self.transformedtheta)
         acceptation  = (log(random.uniform(size = 1)) < (proposedlogomega - currentlogomega))
+#        if not(acceptation):
+#            print "\nproposed loglikelihood:", proposedloglike
+#            print "\ncurrent loglikelihood:", self.totalLogLike
+#            print "\naccept:", acceptation
         if acceptation:
             self.theta = thetastar.copy()
             self.transformedtheta = transformedthetastar.copy()

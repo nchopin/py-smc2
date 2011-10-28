@@ -51,14 +51,16 @@ def transitionAndWeight(states, y, parameters, t):
     code = \
     """
     float tempmeasure1;
+    float temptrans;
     for (int j = 0; j < Ntheta; j++){
         tempmeasure1 = -0.9189385 - 0.5 * log(parameters(1, j));
+        temptrans = exp(-parameters(5,j) * log(parameters(4, j)));
         for(int k = 0; k < Nx; k++){
                 states(k, 0, j) = states(k, 0, j) + 
-                parameters(3, j) * (1 - exp(parameters(5, j) * (states(k, 0, j) - log(parameters(4, j)))))
+                parameters(3, j) * (1 - temptrans * exp(parameters(5, j) * states(k, 0, j)))
                 + sqrt(parameters(0, j)) * noise(k, j);
                 weights(k, j) =  tempmeasure1 - 0.5 / parameters(1, j)
-                * ((double) y(0) - exp(states(k, 0, j)) )*((double) y(0) - exp(states(k, 0, j)));
+                * ((double) y(0) - exp(states(k, 0, j))) * ((double) y(0) - exp(states(k, 0, j)));
         }
     }
     """
@@ -76,7 +78,7 @@ modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
-modelx.parameters = array([0.05**2, 0.05**2, log(1), 0.18, 1, 0.2])
+modelx.parameters = array([0.05**2, 0.05**2, log(1), 0.18, 1, 2])
 
 
 

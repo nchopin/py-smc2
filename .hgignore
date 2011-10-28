@@ -1,10 +1,12 @@
 syntax: glob
 ^prof*
+prof
 test*R
 ^*.py
 ^*.R
 ^*.csv
-^*.txt
+*.txt
+*.txt~
 *.swp
 *.RData
 *.cpickle

@@ -34,6 +34,7 @@ class PlotResultsSMC2(PlotResults):
     def everything(self):
         self.acceptancerate()
         self.ESS()
+        self.addComputingTime()
         self.evidence()
         self.allParameters()
         self.addObservations()
@@ -107,5 +108,11 @@ g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size =
 """
 print(g)
 """
-
+    def addComputingTime(self):
+        self.Rcode += \
+"""
+g <- qplot(x = 1:T, y = cumsum(computingtimes), geom = "line",
+           ylab = "computing time", xlab = "iteration")
+print(g)
+"""
 

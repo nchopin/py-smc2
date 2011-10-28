@@ -55,7 +55,7 @@ class BSMC:
         self.thetaparticles = zeros((self.modeltheta.parameterdimension, self.N))
         self.transformedthetaparticles = zeros((self.modeltheta.parameterdimension, self.N))
         self.xparticles = zeros((self.statedimension, self.N))
-        self.xweights = zeros(self.N)
+        self.xweights = ones(self.N)
         self.logxweights = zeros(self.N)
         self.constants = zeros(self.T)
         self.savingtimes = savingtimes
@@ -68,6 +68,12 @@ class BSMC:
         self.alreadystored = 0
         self.thetahistory = zeros((len(self.savingtimes), self.modeltheta.parameterdimension, self.N))
         self.weighthistory = zeros((len(self.savingtimes), self.N))
+        # prediction
+        self.predictionEnable = algorithmparameters["prediction"]
+        self.predicted = {}
+        if self.predictionEnable:
+            for functionalnames in self.modelx.predictionfunctionals.keys():
+                self.predicted[functionalnames] = zeros(self.T)
         print "------------------"
         print "launching Liu and West's SMC, with algorithm parameters:"
         for key, element in algorithmparameters.items():
@@ -113,6 +119,8 @@ class BSMC:
             TandWresults = self.modelx.transitionAndWeight(self.xparticles[newaxis, ...], \
                     self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"][0, ...]
+            if self.predictionEnable:
+                self.prediction(t)
             self.logxweights[:] = TandWresults["weights"][0, :]
             self.logxweights[isnan(self.logxweights)] = -(10**150)
             self.logxweights[isinf(self.logxweights)] = -(10**150)
@@ -141,6 +149,10 @@ class BSMC:
         res["cov"] += diag(zeros(self.modeltheta.parameterdimension) + \
             10**(-4)/self.modeltheta.parameterdimension)
         return res
+    def prediction(self, t):
+        for key in self.predicted.keys():
+            tempvector = self.modelx.predictionfunctionals[key](self.xparticles[newaxis, ...], self.thetaparticles, t).reshape(self.N)
+            self.predicted[key][t] = average(tempvector, weights = self.xweights)
     def getResults(self):
         resultsDict = {"trueparameters" : self.modelx.parameters,\
                 "N" : self.N, "T" : self.T, "nbparameters" : self.modeltheta.parameterdimension, \
@@ -148,7 +160,7 @@ class BSMC:
                 "savingtimes" : self.savingtimes, \
                 "thetahistory": self.thetahistory, \
                 "weighthistory": self.weighthistory, \
-                "ESS": self.ESS, \
+                "ESS": self.ESS, "predicted": self.predicted, \
                 "resamplingindices": self.resamplingindices}
         return resultsDict
             

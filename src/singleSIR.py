@@ -29,6 +29,7 @@ from numpy import min as numpymin
 from numpy import sum as numpysum
 from scipy.stats import norm
 from resampling import IndResample
+import time
 
 class SingleSIR:
     """
@@ -53,7 +54,8 @@ class SingleSIR:
         self.logxweights = zeros(Nx)
         self.constants = zeros(self.T)
         self.verbose = verbose
-        self.path = zeros((self.T, self.statedimension))
+        self.meanpath = zeros((self.T, self.statedimension))
+        self.computingtimes = zeros(self.T)
         if self.verbose:
             print "Single SIRs with %i x-particles, %i observations" % \
                     (self.Nx, self.observations.shape[0])
@@ -68,6 +70,7 @@ class SingleSIR:
         self.xparticles[...] = self.modelx.firstStateGenerator(self.theta, size = self.Nx)
         self.xhistory[..., 0] = self.xparticles
     def next_steps(self):
+        last_tic = time.time()
         for t in range(self.T):
             excluded = t in self.excludedobservations
             if self.verbose:
@@ -89,7 +92,10 @@ class SingleSIR:
             self.xweights[...] = exp(self.logxweights)
             self.xresample(t)
             self.xhistory[..., t + 1] = self.xparticles
-            self.path[t,:] = mean(self.xparticles, axis = 0)
+            self.meanpath[t,:] = mean(self.xparticles, axis = 0)
+            new_tic = time.time()
+            self.computingtimes[t] = new_tic - last_tic
+            last_tic = new_tic
     def retrieveTrajectory(self, particleindex):
         """ 
         return a complete trajectory (starting from t = 0)
@@ -102,4 +108,23 @@ class SingleSIR:
             parentindex = self.lineage[parentindex, t]
             trajectory[t, :] = self.xhistory[parentindex, :, t]
         return trajectory
+    def getResults(self):
+        """
+        Return a dictionary with vectors of interest.
+        """
+        ntraj = 50
+        trajectories = zeros((self.T + 1, self.statedimension, ntraj))
+        for index in range(ntraj):
+            trajectories[..., index] = self.retrieveTrajectory(index)
+        model_obs = self.modelx.model_obs[0:self.T, :]
+        model_states = self.modelx.model_states[0:self.T, :]
+        resultsDict = {"parameters": self.theta, \
+                "statedimension": self.statedimension, \
+                "Nx" : self.Nx, "T": self.T, \
+                "meanpath": self.meanpath, \
+                "trajectories": trajectories, \
+                "observations": model_obs, \
+                "truestates": model_states, \
+                "computingtimes": self.computingtimes}
+        return resultsDict
 

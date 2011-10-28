@@ -2,7 +2,7 @@
 rm(list = ls())
 gc()
 graphics.off()
-resultsfolder <- "/home/pierre/Dropbox/py-smc2/results/thetalogisticCUDA/synthetic/"
+resultsfolder <- "/home/pierre/Dropbox/py-smc2/results/thetalogistic/synthetic/"
 library(ggplot2)
 setwd(resultsfolder)
 theme_update(
@@ -12,9 +12,9 @@ axis.title.y = theme_text(size=20, angle = 90),
  axis.text.y = theme_text(size=15))
 
 ### Load SMC2 indep results
-SMC2Indresultsfile <- paste(resultsfolder, "SMC2-T500-independent-Nx250-Ntheta1000(", sep = "")
+SMC2Indresultsfile <- paste(resultsfolder, "SMC2-T15-independent-dynamicNx2500-Ntheta2500(", sep = "")
 SMC2IndDF <- data.frame()
-Nruns <- 8
+Nruns <- 5
 for (run in 1:Nruns){
     load(file = paste(SMC2Indresultsfile, run - 1, ").RData", sep = ""))
     indexhistory <- length(savingtimes)
@@ -28,7 +28,7 @@ for (run in 1:Nruns){
 }
 SMC2IndDF$Run <- as.factor(SMC2IndDF$Run)
 ### Load Liu and West results
-BSMCresultsfile <- paste(resultsfolder, "BSMC-T500-N500000(", sep = "")
+BSMCresultsfile <- paste(resultsfolder, "BSMC-T15-N250000(", sep = "")
 #Nruns <- 4
 BSMCDF <- data.frame()
 for (run in 1:Nruns){

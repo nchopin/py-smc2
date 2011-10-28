@@ -74,12 +74,13 @@ if userfile.METHOD == "SMC2":
             "dynamicNx": userfile.DYNAMICNX, "dynamicNxThreshold": \
             userfile.DYNAMICNXTHRESHOLD, "NxLimit": userfile.NXLIMIT, \
             "filtering": userfile.FILTERING, "smoothing": userfile.SMOOOTHING, \
-            "smoothingtimes": userfile.SMOOTHINGTIMES, "storesmoothingtime": userfile.STORESMOOTHINGTIME}
+            "smoothingtimes": userfile.SMOOTHINGTIMES, "storesmoothingtime": userfile.STORESMOOTHINGTIME, \
+            "prediction": userfile.PREDICTION}
 elif userfile.METHOD == "SOPF":
     algorithmparameters = {"N": userfile.NSOPF}
 elif userfile.METHOD == "BSMC":
     algorithmparameters = {"N": userfile.NBSMC, "smooth": userfile.BSMCsmooth, \
-            "ESSthreshold": userfile.BSMCESSTHRESHOLD}
+            "ESSthreshold": userfile.BSMCESSTHRESHOLD, "prediction": userfile.PREDICTION}
 elif userfile.METHOD == "adPMCMC":
     algorithmparameters = {"N": userfile.NPMCMC, "nbiterations": userfile.TPMCMC}
 else:
@@ -169,7 +170,9 @@ else:
     elif userfile.METHOD == "SOPF":
         basename = "%s-T%i-N%i" % (prefix, userfile.T, userfile.NSOPF)
     elif userfile.METHOD == "BSMC":
-        basename = "%s-T%i-N%i" % (prefix, userfile.T, userfile.NBSMC)
+        basename = "%s-T%i-N%i-h%.3f" % (prefix, userfile.T, userfile.NBSMC, userfile.BSMCsmooth)
+    elif userfile.METHOD == "adPMCMC":
+        basename = "%s-T%i-Iter%i-Nx%i" % (prefix, userfile.T, userfile.TPMCMC, userfile.NPMCMC)
     else:
         basename = "%s-T%i" % (prefix, userfile.T)
 if userfile.REPLACEFILE:

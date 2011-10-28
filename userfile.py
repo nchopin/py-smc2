@@ -40,10 +40,10 @@ RANDOMSEED = True
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "periodic"
-T = 250
-#DATASET = "athletics-best-two"
-DATASET = "synthetic"
+MODEL = "SVonefactor"
+T = 1500
+#DATASET = "SP500recent"
+DATASET = "SP500recentyears"
 
 ##########################
 ### METHOD
@@ -55,14 +55,14 @@ DATASET = "synthetic"
 ### (see below for explanations)
 ##########################
 
-METHOD = "BSMC"
+METHOD = "SMC2"
 
 ##########################
 ### Plot options
 # Generate R file to plot results (does not require R)
 GENERATERFILE = True
 ## Generate pdf figures using the R file (requires R and package "ggplot2")
-PLOT = False
+PLOT = True
 
 ###
 ##########################
@@ -83,7 +83,7 @@ ESSTHRESHOLD = 0.5
 ## If DYNAMICNX, acceptance rate limit:
 DYNAMICNXTHRESHOLD = 0.2
 ## If DYNAMICNX, maximum number of x-particles allowed:
-NXLIMIT = 1000
+NXLIMIT = 5000
 ## If PROPOSALKERNEL == "randomwalk",
 ## the random walk has variance RWVARIANCE * Cov(theta-particles).
 RWVARIANCE = 0.1
@@ -101,7 +101,7 @@ NSOPF = 100000
 ### BSMC algorithm parameters
 # If you want to try the BSMC algorithm to compare the results,
 # specify the number of particles here:
-NBSMC = 500000
+NBSMC = 100000
 # specify the "h" factor used in the kernel density approximation
 # of the distribution of the parameters given the data
 # should be "slowly decreasing with N", N being the number of particles
@@ -151,9 +151,11 @@ TPMCMC = 1000
 # (useful when doing sequential analysis).
 # The final time T = number of observations is automatically saved,
 # no need to add it to the list.
-SAVINGTIMES = []
+SAVINGTIMES = [250, 500, 750]
+#SAVINGTIMES = []
 SMOOOTHING = False
 FILTERING = False
+PREDICTION = True
 SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 
@@ -168,7 +170,7 @@ RESULTSFILENAME = ""
 REPLACEFILE = False
 # Use subfolders for each model and each dataset to organize the results.
 # If False, use long names and store the results at the root of the results/ folder.
-USESUBFOLDERS = True 
+USESUBFOLDERS = True
 # RESULTSFILETYPE could include "RData" and "cpickle".
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs

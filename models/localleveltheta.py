@@ -61,7 +61,7 @@ modeltheta.setPriorlogdensity(logdprior)
 modeltheta.setPriorgenerator(rprior)
 modeltheta.setParameterNames(["expression(sigma^2)", "expression(tau^2)"])
 modeltheta.setTransformation(["log", "log"])
-modeltheta.setRtruevalues([0.8, 0.4])
+modeltheta.setRtruevalues([0.5, 0.5])
 InverseGammaTemplate = """
 priorfunction <- function(x){
     shape <- %.5f 
@@ -71,7 +71,14 @@ priorfunction <- function(x){
 """
 modeltheta.setRprior([InverseGammaTemplate % (hyperparameters["sigma_shape"], hyperparameters["sigma_scale"]), \
 InverseGammaTemplate % (hyperparameters["tau_shape"], hyperparameters["tau_scale"])])
-
-
+modeltheta.additionalPlots = """
+if ("predictedlowquantile" %in% ls() && "predictedhiquantile" %in% ls()){
+    g <- qplot(x = 1:T, y = observations, geom = "line")
+    g <- g + geom_line(aes(y = predictedlowquantile), colour = "red")
+    g <- g + geom_line(aes(y = predictedhiquantile), colour = "green")
+    g <- g + xlab("time") + ylab("observations")
+    print(g)
+}
+"""
 
 

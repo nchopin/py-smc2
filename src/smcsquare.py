@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-import os, os.path
+import os, os.path, time
 from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
         array, float32, int32, cov, isnan, zeros_like, \
@@ -74,6 +74,12 @@ class SMCsquare:
         if self.smoothingEnable:
             self.smoothingtimes = algorithmparameters["smoothingtimes"]
             self.storesmoothingtime = algorithmparameters["storesmoothingtime"]
+        ## Prediction
+        self.predictionEnable = algorithmparameters["prediction"]
+        self.predicted = {}
+        if self.predictionEnable:
+            for functionalnames in self.modelx.predictionfunctionals.keys():
+                self.predicted[functionalnames] = zeros(self.T)
         ## other things:
         # store ESS at each time
         self.ESS = zeros(self.T)
@@ -94,6 +100,8 @@ class SMCsquare:
         self.weighthistory = zeros((len(self.savingtimes), self.Ntheta))
         # number of already past saving times
         self.alreadystored = 0
+        # computing time for each iteration
+        self.computingtimes = zeros(self.T)
         print "------------------"
         print "launching SMC^2, with algorithm parameters:"
         for key, element in algorithmparameters.items():
@@ -180,7 +188,12 @@ class SMCsquare:
         acceptrate = sum(acceptations) / self.Ntheta
         self.acceptratios.append(acceptrate)
         print "acceptance rate: %.3f" % (acceptrate)
-
+    def correctWeightsFromInitToPrior(self):
+        correction = zeros(self.Ntheta)
+        for i in range(self.Ntheta):
+            correction[i] = self.modeltheta.priorlogdensity(self.transformedthetaparticles[:, i]) - \
+                            self.modeltheta.dinit(self.transformedthetaparticles[:, i])
+        return correction
     def first_step(self):
         """
         First step: generate Ntheta theta-particles from the prior, and then
@@ -191,9 +204,6 @@ class SMCsquare:
             print "init distribution is specified, using it..."
             self.thetaparticles[...] = self.modeltheta.rinit(self.Ntheta)
             self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
-            for i in range(self.Ntheta):
-                self.thetalogweights[0, i] = self.modeltheta.priorlogdensity(self.transformedthetaparticles[:, i]) - \
-                        self.modeltheta.dinit(self.transformedthetaparticles[:, i])
         else:
             print "no init distribution is specified, using prior distribution instead..."
             self.thetaparticles[...] = self.modeltheta.priorgenerator(self.Ntheta)
@@ -207,10 +217,10 @@ class SMCsquare:
         """
         for t in range(self.T):
             excluded = t in self.excludedobservations
-            #print "time %i" % t
             progressbar(t / (self.T - 1))
             if excluded:
                 print "\nobservations", self.observations[t,:], "set to be excluded"
+            last_tic = time.time()
             TandWresults = self.modelx.transitionAndWeight(self.xparticles, \
                     self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"]
@@ -226,7 +236,10 @@ class SMCsquare:
                 self.constants[:] = numpymax(self.logxweights, axis = 0)
             self.xweights[...] = exp(self.logxweights)
             self.logLike[:] = log(mean(self.xweights, axis = 0)) + self.constants[:]
-
+            # prediction: at this point we have the transitioned x-particles and we didn't update
+            # the weights of the theta-particles
+            if self.predictionEnable:
+                self.prediction(t)
             if t > 0:
                 self.evidences[t] = self.getEvidence(self.thetalogweights[t-1, :], self.logLike)
                 self.totalLogLike[:] += self.logLike[:]
@@ -239,13 +252,10 @@ class SMCsquare:
             self.xresample()
             self.ESS[t] = ESSfunction(exp(self.thetalogweights[t, :]))
             if self.AP["dynamicNx"]:
-                #print "\nESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx)
                 progressbar(t / (self.T - 1), text = " ESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx))
             else:
-                #print "\nESS: %.3f" % self.ESS[t]
                 progressbar(t / (self.T - 1), text = " ESS: %.3f" % self.ESS[t])
             if self.ESS[t] < (self.AP["ESSthreshold"] * self.Ntheta):
-                #print "\nresample step... "
                 progressbar(t / (self.T - 1), text = " resample move step at iteration = %i " % t)
                 covdict = self.computeCovarianceAndMean(t)
                 if self.AP["proposalkernel"] == "randomwalk":
@@ -256,13 +266,15 @@ class SMCsquare:
                     self.proposalmean = covdict["mean"]
                 self.thetaresample(t)
                 self.resamplingindices.append(t)
-                #print "\nmove step... "
                 for move in range(self.AP["nbmoves"]):
                     self.PMCMCstep(t)
                     if self.acceptratios[-1] < self.AP["dynamicNxThreshold"] and self.Nx < (self.AP["NxLimit"] / 2) \
                             and self.AP["dynamicNx"]:
                         print "\nincreasing the number of x-particles... "
                         self.increaseParticlesNb(t)
+            new_tic = time.time()
+            self.computingtimes[t] = new_tic - last_tic
+            last_tic = new_tic
             """ filtering and smoothing """
             if self.filteringEnable:
                 self.filtering(t)
@@ -271,8 +283,17 @@ class SMCsquare:
             if t in self.savingtimes or t == self.T - 1:
                 print "\nsaving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
-                self.weighthistory[self.alreadystored, ...] = exp(self.thetalogweights[t, :])
+                if self.modeltheta.hasInitDistribution:
+                    self.weighthistory[self.alreadystored, ...] = \
+                            exp(self.thetalogweights[t, :] + self.correctWeightsFromInitToPrior())
+                else:
+                    self.weighthistory[self.alreadystored, ...] = exp(self.thetalogweights[t, :])
                 self.alreadystored += 1
+    def prediction(self, t):
+        for key in self.predicted.keys():
+            tempmatrix = self.modelx.predictionfunctionals[key](self.xparticles, self.thetaparticles, t)
+            tempmatrix = mean(tempmatrix, axis = 0)
+            self.predicted[key][t] = average(tempmatrix, weights = exp(self.thetalogweights[t,:]))
     def filtering(self, t):
         for key in self.filtered.keys():
             tempmatrix = self.modelx.functionals[key](self.xparticles, self.thetaparticles, t)
@@ -298,9 +319,6 @@ class SMCsquare:
                 self.smoothedmeans[smoothkey][subt] = average(tempmean, weights = exp(self.thetalogweights[t,:]))
                 if subt == self.storesmoothingtime:
                     self.smoothedvalues[smoothkey][:] = tempmean
-#            print smoothkey
-#            print "smoothing", self.smoothedmeans[smoothkey][0:(t+1),...]
-#            print "filtering", self.filtered[key][0:(t+1),...]
         print "smoothing done!"
 
     def computeCovarianceAndMean(self, t):
@@ -337,7 +355,8 @@ class SMCsquare:
                 "acceptratios": self.acceptratios, "Nxlist": self.Nxlist, \
                 "increaseindices": self.increaseindices, "resamplingindices": self.resamplingindices, \
                 "evidences": self.evidences, "filtered": self.filtered, "smoothedmeans": self.smoothedmeans, \
-                "smoothedvalues": self.smoothedvalues}
+                "smoothedvalues": self.smoothedvalues, "predicted": self.predicted, \
+                "computingtimes": self.computingtimes}
         return resultsDict
 
 

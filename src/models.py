@@ -35,6 +35,7 @@ class SSM:
         self.ydimension = ydimension
         self.excludedobservations = []
         self.functionals = {}
+        self.predictionfunctionals = {}
     def setFirstStateGenerator(self, function):
         self.firstStateGenerator = function
     def setVectorTransition(self, function):
