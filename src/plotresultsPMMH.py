@@ -25,12 +25,13 @@ from src.plotresults import PlotResults
 
 
 class PlotResultsPMMH(PlotResults):
-    def __init__(self, resultsfolder, RDatafile):
+    def __init__(self, resultsfolder, RDatafile, burnin):
         self.method = "adPMCMC"
         self.color = "red"
         PlotResults.__init__(self, resultsfolder, RDatafile)
         self.Rcode += """pdf(file = pdffile, useDingbats = FALSE, title = "%s results")\n""" % self.method
         self.parametersHaveBeenLoaded = False
+        self.burnin = burnin
 
     def everything(self):
         self.allParameters()
@@ -46,7 +47,8 @@ class PlotResultsPMMH(PlotResults):
 thetasDF <- data.frame(t(chain))
 names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""))
 thetasDF$iterations <- 1:(dim(thetasDF)[1])
-"""
+thetasDF <- subset(thetasDF, iterations > %(burnin)i)
+""" % {"burnin": self.burnin}
         self.parametersHaveBeenLoaded = True
 
     def histogramparameter(self, parameterindex):

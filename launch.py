@@ -232,7 +232,8 @@ if userfile.GENERATERFILE:
         plotter = PlotResultsSMC2(resultsfolder, RDatafile)
     elif userfile.METHOD == "adPMCMC":
         from src.plotresultsPMMH import PlotResultsPMMH
-        plotter = PlotResultsPMMH(resultsfolder, RDatafile)
+        plotter = PlotResultsPMMH(resultsfolder, RDatafile, \
+                userfile.PMCMCBURNIN)
     elif userfile.METHOD == "SOPF":
         from src.plotresultsSOPF import PlotResultsSOPF
         plotter = PlotResultsSOPF(resultsfolder, RDatafile)

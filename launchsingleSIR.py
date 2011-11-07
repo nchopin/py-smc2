@@ -31,8 +31,8 @@ from scipy.stats import norm
 from snippets.localfolder import get_path
 from src.singleSIR import SingleSIR
 
-random.seed(17)
-MODEL = "locallevel"
+#random.seed(17)
+MODEL = "simplestmodel"
 
 THISPATH = get_path()
 
@@ -49,7 +49,7 @@ print "Creating data set..."
 xmodule.modelx.generateData(1000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
 
 nbparameters = thetamodule.modeltheta.parameterdimension
-Nx = 50000
+Nx = 5000
 T = min(30, xmodule.modelx.model_obs.shape[0])
 model_obs = xmodule.modelx.model_obs[0:T, :]
 model_states = xmodule.modelx.model_states[0:T, :]
@@ -64,7 +64,9 @@ singleSIR = SingleSIR(Nx, theta, model_obs, xmodule.modelx, verbose = True)
 import pstats
 p = pstats.Stats('prof')
 p.sort_stats("time").print_stats(3)
-
+results = singleSIR.getResults()
+path = results["meanpath"]
+traj = results["trajectories"]
 
 import rpy2.robjects as robjects
 r = robjects.r
@@ -76,17 +78,15 @@ yrange[1] += 1
 myrange = robjects.FloatVector([-40, 40])
 r("""par(mfrow = c(1, 1))""")
 r.plot(x = robjects.FloatVector(array(range(T))), y = mstates, ylim = yrange, xlab = "index", ylab = "x", type = "b", col = "black", lwd = 2.5)
-#r.lines(x = robjects.FloatVector(array(range(T))), y = mobs, col = "blue", lwd = 2.5, lty = 2)
+r.lines(x = robjects.FloatVector(array(range(T))), y = mobs, col = "blue", lwd = 2.5, lty = 2)
 #r.plot(my, ylab = "x", type = "l", ylim = myrange, lwd = 2)
-approx = robjects.FloatVector(singleSIR.path[:, 0])
-#r.points(mx, col = "black", lwd = 2.5)
-#r.points(mx, col = "white", lwd = 1.5)
+approx = robjects.FloatVector(path[:, 0])
 r.lines(x = robjects.FloatVector(array(range(T))), y = approx, col = "black", lwd = 3.5, lty = 4)
 r.lines(x = robjects.FloatVector(array(range(T))), y = approx, col = "yellow", lwd = 2, lty = 4)
-#for index in range(Nx):
+#for index in range(50):
 #    print index
-#    onetraj = singleSIR.retrieveTrajectory(index)[1:(T+1), :]
-#    Ronetraj = robjects.FloatVector(onetraj[:, 0])
+#    onetraj = traj[1:(T+1),0,index]
+#    Ronetraj = robjects.FloatVector(onetraj)
 #    r.lines(x = robjects.FloatVector(array(range(T))), y = Ronetraj, col = "red", lwd = 0.4)
 
 raw_input("appuyez sur une touche pour fermer la fenetre")

@@ -61,7 +61,7 @@ modeltheta.setPriorlogdensity(logdprior)
 modeltheta.setPriorgenerator(rprior)
 modeltheta.setParameterNames(["expression(sigma^2)", "expression(tau^2)"])
 modeltheta.setTransformation(["log", "log"])
-modeltheta.setRtruevalues([0.5, 0.5])
+modeltheta.setRtruevalues([0.5, 0.1])
 InverseGammaTemplate = """
 priorfunction <- function(x){
     shape <- %.5f 

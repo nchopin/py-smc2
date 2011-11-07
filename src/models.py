@@ -107,7 +107,11 @@ class ParameterModel:
         """ takes and returns transformed parameters """
         nbparameters = currentvalue.shape[0]
         proposedparameters = zeros_like(currentvalue)
-        noise = transpose(random.multivariate_normal(repeat(0, nbparameters), \
+        if (nbparameters == 1):
+            noise = transpose(random.normal(0, \
+                proposalcovmatrix, size = currentvalue.shape[1]))
+        else:
+            noise = transpose(random.multivariate_normal(repeat(0, nbparameters), \
                 proposalcovmatrix, size = currentvalue.shape[1]))
         if proposalkernel == "randomwalk":
             proposedparameters = currentvalue + noise

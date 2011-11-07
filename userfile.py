@@ -40,8 +40,8 @@ RANDOMSEED = True
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "locallevel"
-T = 15
+MODEL = "simplestmodel"
+T = 250
 #DATASET = "SP500recent"
 DATASET = "synthetic"
 
@@ -50,9 +50,8 @@ DATASET = "synthetic"
 # METHOD could be:
 # SMC2: SMC square as described in Chopin, Jacob and Papaspiliopoulos
 # SOPF: Self Organizing Particle Filter, as described in Kitagawa
-# BSMC: Self Organizing Particle Filter, as described in Kitagawa
+# BSMC: Liu and West's particle filter, as described in SMC in practice
 # adPMCMC: Adaptive PMCMC as described in Peters, Hosack and Hayes
-### (see below for explanations)
 ##########################
 
 METHOD = "SMC2"
@@ -101,7 +100,7 @@ NSOPF = 100000
 ### BSMC algorithm parameters
 # If you want to try the BSMC algorithm to compare the results,
 # specify the number of particles here:
-NBSMC = 100000
+NBSMC = 10000
 # specify the "h" factor used in the kernel density approximation
 # of the distribution of the parameters given the data
 # should be "slowly decreasing with N", N being the number of particles
@@ -115,9 +114,11 @@ BSMCESSTHRESHOLD = 0.99
 ### adaptive PMCMC algorithm parameters
 # If you want to try the adaptive PMCMC algorithm to compare the results:
 # Number of x-particles:
-NPMCMC = 500
+NPMCMC = 250
 # Number of iterations:
-TPMCMC = 1000
+TPMCMC = 5000
+# burn-in (only for the plots; the whole trajectories are stored)
+PMCMCBURNIN = TPMCMC / 10
 
 ### 
 ##########################
@@ -164,7 +165,7 @@ PROFILING = True
 
 # Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.
-RESULTSFILENAME = ""
+RESULTSFILENAME = "temp"
 # Replace already existing files; if False,
 # a counter will be added to the result file name, so that no existing files are erased.
 REPLACEFILE = False

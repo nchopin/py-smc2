@@ -50,9 +50,9 @@ indexhistory <- length(savingtimes)
 t <- savingtimes[indexhistory]
 w <- weighthistory[indexhistory,]
 w <- w / sum(w)
-thetas <- as.data.frame(t(thetahistory[indexhistory,,]))
-thetasDF <- cbind(thetas, w)
-names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""), "w")
+#thetas <- as.data.frame(t(thetahistory[indexhistory,,]))
+#thetasDF <- cbind(thetas, w)
+#names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""), "w")
 """
         self.parametersHaveBeenLoaded = True
     def acceptancerate(self):
@@ -88,10 +88,13 @@ print(g)
             self.loadparameters()
         self.Rcode += \
 """
+indexhistory <- length(savingtimes)
+w <- weighthistory[indexhistory,]
+w <- w / sum(w)
 i <- %(parameterindex)i
-g <- ggplot(thetasDF, aes(thetasDF[[i]], weight = w))
-g <- g + geom_histogram(aes(y=..density..), colour = "black", fill = "white")
-g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
+g <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") + 
+  geom_histogram(aes(y = ..density..)) + geom_density(fill = "blue", alpha = 0.5) +
+    xlab(%(parametername)s)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
         if self.modeltheta.truevaluesAvailable:
             self.Rcode += \
