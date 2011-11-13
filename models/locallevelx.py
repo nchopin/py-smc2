@@ -79,24 +79,29 @@ modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
 modelx.parameters = array([0.5, 0.1])
+modelx.setRLinearGaussian(\
+"""
+dlm <- list("FF" = 1, "GG" = 1, "V" = %.3f, "W" = %.3f,
+             "m0" = 0, "C0" = 1)
+""" % (modelx.parameters[1], modelx.parameters[0]))
 
-def predictionlowquantile(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    lowquantile = -1.95996398454
-    for k in range(Nx):
-        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * lowquantile
-    return result
-def predictionhiquantile(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    hiquantile = +1.95996398454
-    for k in range(Nx):
-        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * hiquantile
-    return result
-modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
+#def predictionlowquantile(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    lowquantile = -1.95996398454
+#    for k in range(Nx):
+#        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * lowquantile
+#    return result
+#def predictionhiquantile(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    hiquantile = +1.95996398454
+#    for k in range(Nx):
+#        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * hiquantile
+#    return result
+#modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
 
 
 

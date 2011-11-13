@@ -60,8 +60,29 @@ i <- %(parameterindex)i
 g <- ggplot(thetasDF, aes(thetasDF[[i]]))
 g <- g + geom_histogram(aes(y=..density..), colour = "black", fill = "white")
 g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
-print(g)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
+        if hasattr(self.modeltheta, "truevalues"):
+            self.Rcode += \
+"""
+g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+"""
+        if hasattr(self.modeltheta, "Rfunctionlist"):
+            self.Rcode += \
+"""
+%s
+g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size = 1)
+""" % self.modeltheta.Rfunctionlist[parameterindex]
+            if hasattr(self.modelx, "Rtruelikelihood"):
+                self.Rcode += \
+"""
+%s
+trueposterior <- function(x) priorfunction(x) * truelikelihood(x)
+g <- g + stat_function(fun = trueposterior, colour = "green", size = 2)
+""" % self.modelx.Rtruelikelihood
+        self.Rcode += \
+"""
+print(g)
+"""
 
     def traceplot(self, parameterindex):
         if not(self.parametersHaveBeenLoaded):

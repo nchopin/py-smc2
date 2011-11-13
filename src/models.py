@@ -67,27 +67,33 @@ class SSM:
         if len(self.model_obs.shape) == 1:
             self.model_obs = self.model_obs[:, newaxis]
         print "loaded: %i observations" % self.model_obs.shape[0]
-        
+        # load hidden states if it is a synthetic data set
+        # (for plotting purpose)
+        hiddenstatefile = filename.replace(".R", "-states.R")
+        if os.path.exists(hiddenstatefile):
+            self.model_states = genfromtxt(hiddenstatefile)
+        else:
+            self.model_states = "unknown"
+    def setRLinearGaussian(self, string):
+        self.RLinearGaussian = string
+    def setRtruelikelihood(self, string):
+        self.Rtruelikelihood = string
 class ParameterModel:
     def __init__(self, name, dimension, priorandtruevaluesspecified = False):
         print 'creating parameter model "%s"' % name
         self.name = name
         self.parameterdimension = dimension 
         self.priorandtruevaluesspecified = priorandtruevaluesspecified
-        self.hasInitDistribution = False
+#        self.hasInitDistribution = False
         self.plottingInstructions = []
         def update(hyperparameters, observations):
             return hyperparameters
         self.updateHyperParam = update
-        self.RpriorAvailable = False
         self.additionalPlots = ""
-        self.truevaluesAvailable = False
     def setRtruevalues(self, truevalues):
         self.truevalues = truevalues
-        self.truevaluesAvailable = True
     def setRprior(self, Rfunctionlist):
         self.Rfunctionlist = Rfunctionlist
-        self.RpriorAvailable = True
     def setParameterNames(self, names):
         self.parameternames = names
     def setHyperparameters(self, hyperparameters):
@@ -106,6 +112,8 @@ class ParameterModel:
             proposalkernel = "randomwalk", proposalmean = None):
         """ takes and returns transformed parameters """
         nbparameters = currentvalue.shape[0]
+        #print "\n cov matrix"
+        #print proposalcovmatrix
         proposedparameters = zeros_like(currentvalue)
         if (nbparameters == 1):
             noise = transpose(random.normal(0, \
@@ -118,10 +126,10 @@ class ParameterModel:
         elif proposalkernel == "independent":
             proposedparameters = proposalmean[:, newaxis] + noise
         return proposedparameters
-    def setInitDistribution(self, rfunction, dfunction):
-        self.hasInitDistribution = True
-        self.rinit = rfunction
-        self.dinit = dfunction
+#    def setInitDistribution(self, rfunction, dfunction):
+#        self.hasInitDistribution = True
+#        self.rinit = rfunction
+#        self.dinit = dfunction
     def setTransformation(self, transformations):
         self.whichAreLog = [transfo == "log" for transfo in transformations]
         self.whichAreLogit = [transfo == "logit" for transfo in transformations]
@@ -141,7 +149,11 @@ class ParameterModel:
             if self.whichAreLog[index]:
                 parameters[index, :] = exp(transformedparameters[index, :])
             elif self.whichAreLogit[index]:
-                parameters[index, :] = maximum(10**(-10), minimum((1 - 10**(-10)), exp(transformedparameters[index, :]) / (1 + exp(transformedparameters[index, :]))))
+                indOK = transformedparameters[index, :] < 100
+                trparam = zeros_like(transformedparameters[index, :]) + 1
+                #trparam[indOK] = exp(transformedparameters[index, :][indOK]) / (1 + exp(transformedparameters[index, :][indOK]))
+                trparam[indOK] = exp(transformedparameters[index, indOK]) / (1 + exp(transformedparameters[index, indOK]))
+                parameters[index, :] = trparam
             else:
                 parameters[index, :] = transformedparameters[index, :]
         return parameters

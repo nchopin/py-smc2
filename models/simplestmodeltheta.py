@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 
 from numpy import random, power, sqrt, exp, zeros_like, zeros, \
-        ones, mean, average, prod, log
+        ones, mean, average, prod, log, array
 from scipy.stats import norm, truncnorm, gamma
 from src.models import ParameterModel
 
@@ -28,14 +28,18 @@ from src.models import ParameterModel
 #### See src/models.py for explanations about the model functions.
 #### most functions here take transformed parameters, except rprior
 
+def safelogdlogit(x):
+    y = x.copy()
+    indicesOK = (x < 50)
+    y[indicesOK] = log(1 + exp(x[indicesOK]))
+    return x - 2 * y 
 def logdprior(parameters, hyperparameters):
     """ Takes transformed parameters.  When the parameter is transformed, 
     a jacobian appears in the formula.
     """
-    #sigma_part = parameters[0] + invgamma_logpdf(parameters[0], hyperparameters["sigma_shape"], hyperparameters["sigma_scale"])
-    #tau_part = parameters[1] + invgamma_logpdf(parameters[1], hyperparameters["tau_shape"], hyperparameters["tau_scale"])
-    #rho_part = parameters[0] - 2 * log(1 + exp(parameters[0]))
-    rho_part = 0
+    # the following is the log density of Y = logit(U) when U is Uniform(0,1)
+    rho_part = safelogdlogit(array([parameters[0]]))
+    #parameters[0] - 2 * log(1 + exp(parameters[0]))
     return rho_part
 
 def rprior(size, hyperparameters):
@@ -57,14 +61,31 @@ modeltheta.setPriorgenerator(rprior)
 modeltheta.setParameterNames(["expression(rho)"])
 modeltheta.setTransformation(["logit"])
 modeltheta.setRtruevalues([0.8])
-#InverseGammaTemplate = """
-#priorfunction <- function(x){
-#    shape <- %.5f 
-#    scale <- %.5f
-#    return(scale**shape / gamma(shape) * x**(- shape - 1) * exp(-scale / x))
-#}
-#"""
-#modeltheta.setRprior([InverseGammaTemplate % (hyperparameters["sigma_shape"], hyperparameters["sigma_scale"]), \
+modeltheta.additionalPlots = """
+if ("predictedlowquantile" %in% ls() && "predictedhiquantile" %in% ls()){
+    g <- qplot(x = 1:T, y = observations, geom = "line")
+    g <- g + geom_line(aes(y = predictedlowquantile), colour = "red")
+    g <- g + geom_line(aes(y = predictedhiquantile), colour = "green")
+    g <- g + xlab("time") + ylab("observations")
+    print(g)
+}
+if (exists("truestates")){
+    if (length(truestates) > 1){
+      g <- qplot(x = 1:T, y = truestates, geom = "line")
+      g <- g + geom_line(aes(y = filteredhiddenstate), colour = "red")
+      g <- g + xlab("time") + ylab("true states")
+      print(g)
+    }
+}
+"""
+uniformprior = \
+"""
+priorfunction <- function(x){
+    return(1)
+}
+"""
+modeltheta.setRprior([uniformprior])
+
 #InverseGammaTemplate % (hyperparameters["tau_shape"], hyperparameters["tau_scale"])])
 #modeltheta.additionalPlots = """
 #if ("predictedlowquantile" %in% ls() && "predictedhiquantile" %in% ls()){

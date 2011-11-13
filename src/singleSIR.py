@@ -38,7 +38,9 @@ class SingleSIR:
     The goal is to sample a x-trajectory, so the 
     x-trajectories are stored.
     """
-    def __init__(self, Nx, theta, observations, modelx, verbose = False, autoinit = True):
+    def __init__(self, Nx, theta, observations, modelx, \
+            savingtimes = [], storall = False, \
+            verbose = False, autoinit = True):
         self.modelx = modelx
         self.observations = observations
         self.statedimension = modelx.xdimension
@@ -47,8 +49,17 @@ class SingleSIR:
         self.T = observations.shape[0]
         self.excludedobservations = self.modelx.excludedobservations
         self.theta = theta
-        self.xhistory = zeros((Nx, self.statedimension, self.T + 1))
-        self.lineage = zeros((Nx, self.T), dtype = int32)
+        self.savingtimes = savingtimes
+        self.storall = storall
+        if self.storall:
+            self.savingtimes = range(T)
+            self.lineage = zeros((Nx, self.T), dtype = int32)
+        if len(self.savingtimes) > 0:
+            self.alreadystored = 0
+            if not (0 in self.savingtimes):
+                self.savingtimes.append(0)
+            self.savingtimes.sort()
+            self.xhistory = zeros((Nx, self.statedimension, len(self.savingtimes)))
         self.xparticles = zeros((Nx, self.statedimension))
         self.xweights = zeros(Nx)
         self.logxweights = zeros(Nx)
@@ -65,10 +76,13 @@ class SingleSIR:
     def xresample(self, t):
         parentsindices = IndResample(self.xweights, self.Nx)
         self.xparticles[...] = self.xparticles[parentsindices, :]
-        self.lineage[:, t] = parentsindices
+        if self.storall:
+            self.lineage[:, t] = parentsindices
     def first_step(self):
         self.xparticles[...] = self.modelx.firstStateGenerator(self.theta, size = self.Nx)
-        self.xhistory[..., 0] = self.xparticles
+        if 0 in self.savingtimes:
+            self.xhistory[..., 0] = self.xparticles
+            self.alreadystored += 1
     def next_steps(self):
         last_tic = time.time()
         for t in range(self.T):
@@ -91,7 +105,9 @@ class SingleSIR:
                 self.constants[t] = numpymax(self.logxweights)
             self.xweights[...] = exp(self.logxweights)
             self.xresample(t)
-            self.xhistory[..., t + 1] = self.xparticles
+            if ((t+1) in self.savingtimes):
+                self.xhistory[..., self.alreadystored] = self.xparticles
+                self.alreadystored += 1
             self.meanpath[t,:] = mean(self.xparticles, axis = 0)
             new_tic = time.time()
             self.computingtimes[t] = new_tic - last_tic
@@ -112,19 +128,21 @@ class SingleSIR:
         """
         Return a dictionary with vectors of interest.
         """
-        ntraj = 50
-        trajectories = zeros((self.T + 1, self.statedimension, ntraj))
-        for index in range(ntraj):
-            trajectories[..., index] = self.retrieveTrajectory(index)
         model_obs = self.modelx.model_obs[0:self.T, :]
-        model_states = self.modelx.model_states[0:self.T, :]
         resultsDict = {"parameters": self.theta, \
                 "statedimension": self.statedimension, \
                 "Nx" : self.Nx, "T": self.T, \
                 "meanpath": self.meanpath, \
-                "trajectories": trajectories, \
                 "observations": model_obs, \
-                "truestates": model_states, \
                 "computingtimes": self.computingtimes}
+        if self.storall:
+            ntraj = 50
+            trajectories = zeros((self.T + 1, self.statedimension, ntraj))
+            for index in range(ntraj):
+                trajectories[..., index] = self.retrieveTrajectory(index)
+            resultsDict.update({"trajectories": trajectories})
+        if len(self.savingtimes) > 0:
+            resultsDict.update({"xhistory": self.xhistory, "savingtimes":
+                self.savingtimes})
         return resultsDict
 

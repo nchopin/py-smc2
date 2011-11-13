@@ -49,7 +49,7 @@ load(file = resultsfile)
         "pdffile": self.pdffile}
     def setModelTheta(self, modeltheta):
         self.modeltheta = modeltheta
-        if self.modeltheta.truevaluesAvailable:
+        if hasattr(self.modeltheta, "truevalues"):
             self.Rcode += \
 """
 truevalues <- c(%s)
@@ -59,6 +59,8 @@ truevalues <- c(%s)
         self.additionalPlots = self.modeltheta.additionalPlots
     def setModelX(self, modelx):
         self.modelx = modelx
+        if hasattr(self.modelx, "RLinearGaussian"):
+            self.Rcode += "\n" + self.modelx.RLinearGaussian
     def setParameters(self, names):
         self.parameterdimension = len(names)
         self.parameternames = names

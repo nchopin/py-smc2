@@ -96,17 +96,24 @@ g <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") +
   geom_histogram(aes(y = ..density..)) + geom_density(fill = "blue", alpha = 0.5) +
     xlab(%(parametername)s)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
-        if self.modeltheta.truevaluesAvailable:
+        if hasattr(self.modeltheta, "truevalues"):
             self.Rcode += \
 """
 g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
 """
-        if self.modeltheta.RpriorAvailable:
+        if hasattr(self.modeltheta, "Rfunctionlist"):
             self.Rcode += \
 """
 %s
 g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size = 1)
 """ % self.modeltheta.Rfunctionlist[parameterindex]
+            if hasattr(self.modelx, "Rtruelikelihood"):
+                self.Rcode += \
+"""
+%s
+trueposterior <- function(x) priorfunction(x) * truelikelihood(x)
+g <- g + stat_function(fun = trueposterior, colour = "green", size = 2)
+""" % self.modelx.Rtruelikelihood
         self.Rcode += \
 """
 print(g)

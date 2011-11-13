@@ -29,14 +29,7 @@ from numpy import min as numpymin
 from numpy import sum as numpysum
 from scipy.stats import norm
 from resampling import resample2D
-
-def ESSfunction(weights):
-    """
-    Computes the ESS, given unnormalized weights.
-    """
-    norm_weights = weights / sum(weights)
-    sqweights = power(norm_weights, 2)
-    return 1 / sum(sqweights)
+from various import ESSfunction
 
 class ParallelSIRs:
     """
@@ -49,7 +42,8 @@ class ParallelSIRs:
     dynamic.
     """
     def __init__(self, Nx, thetaparticles, observations, modelx, \
-            savepath = False, verbose = False, saveproposals = False):
+            savepath = False, verbose = False, saveproposals = False, \
+            saveLL = False):
         self.modelx = modelx
         self.observations = observations
         self.statedimension = modelx.xdimension
@@ -64,14 +58,17 @@ class ParallelSIRs:
         self.logxweights = zeros((self.Nx, self.Ntheta))
         self.constants = zeros((self.T, self.Ntheta))
         self.totalLogLike = zeros(self.Ntheta)
+        self.savepath = savepath
         self.verbose = verbose
         self.saveproposals = saveproposals
-        self.savepath = savepath
+        self.saveLL = saveLL
         if self.saveproposals:
             self.allxparticles = zeros((self.T, self.Nx, self.statedimension, self.Ntheta))
             self.allproposals = zeros((self.T, self.Nx, self.statedimension, self.Ntheta))
         if self.savepath:
             self.paths = zeros((self.T, self.statedimension, self.Ntheta))
+        if self.saveLL:
+            self.allLL = zeros((self.T, self.Ntheta))
         if self.verbose:
             print "Parallel SIRs with %i theta-particles, %i x-particles, %i observations" % \
                     (self.Ntheta, self.Nx, self.observations.shape[0])
@@ -108,6 +105,8 @@ class ParallelSIRs:
             logLike[isnan(logLike)] = -(10**150)
             logLike[isinf(logLike)] = -(10**150)
             self.totalLogLike += logLike
+            if self.saveLL:
+                self.allLL[t, :] = logLike + self.constants[t, :]
             if not(excluded):
                 self.xresample()
             if self.saveproposals:

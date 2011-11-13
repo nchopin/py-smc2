@@ -39,10 +39,13 @@ from src.models import SSM
 # tau = 0.5
 ################################################################
 
-SIGMA = 0.1
-TAU = 0.1
-### these functions take untransformed parameters as arguments
+SIGMA = 0.5
+TAU = 0.5
+SIGMA2 = SIGMA * SIGMA
+TAU2 = TAU * TAU
+rho = 0.8
 
+### these functions take untransformed parameters as arguments
 #### See src/models.py for explanations about the model functions.
 def firstStateGenerator(parameters, size):
     return random.normal(size = size, loc = 0, scale = 1)[:, newaxis]
@@ -56,22 +59,24 @@ def transitionAndWeight(states, y, parameters, t):
     float temptransition;
     for (int j = 0; j < Ntheta; j++)
     {
-        tempmeasure1 = -0.9189385 - 0.5 * log(%(TAU).3f * %(TAU).3f);
-        tempmeasure2 = -0.5 / (%(TAU).3f * %(TAU).3f);
+        tempmeasure1 = -0.9189385 - 0.5 * log(%(TAU2)s);
+        tempmeasure2 = -0.5 / (%(TAU2)s);
+        temptransition = %(SIGMA)s;
         for(int k = 0; k < Nx; k++)
         {
-            states(k, 0, j) = parameters(0, j) * states(k, 0, j) + %(SIGMA).3f * noise(k, j);
+            states(k, 0, j) = parameters(0, j) * states(k, 0, j) + temptransition * noise(k, j);
             weights(k, j) = tempmeasure1 + 
             tempmeasure2 * ((double) y(0) - states(k, 0, j)) * ((double) y(0) - states(k, 0, j));
         }
     }
-    """ % {"TAU": TAU, "SIGMA": SIGMA}
+    """ % {"TAU2": TAU2, "SIGMA": SIGMA}
     y = array([y])
     Nx = states.shape[0]
     Ntheta = states.shape[2]
     weights = zeros((Nx, Ntheta))
     noise = random.normal(size = (Nx, Ntheta), loc = 0, scale = 1)
-    weave.inline(code,['Nx', 'Ntheta', 'states', 'y', 'parameters', 'noise', 'weights'], type_converters=weave.converters.blitz, libraries = ["m"])
+    weave.inline(code,['Nx', 'Ntheta', 'states', 'y', 'parameters', 'noise', 'weights'], \
+            type_converters=weave.converters.blitz, libraries = ["m"])
     return {"states": states , "weights": weights}
 
 modelx = SSM(name = "Simplest model x", xdimension = 1, ydimension = 1)
@@ -80,25 +85,84 @@ modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
-modelx.parameters = array([0.8])
+modelx.parameters = array([rho])
 
-def predictionlowquantile(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    lowquantile = -1.95996398454
-    for k in range(Nx):
-        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * lowquantile
-    return result
-def predictionhiquantile(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    hiquantile = +1.95996398454
-    for k in range(Nx):
-        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * hiquantile
-    return result
+def hiddenstate(xparticles, thetaparticles, t):
+    return xparticles[:, 0, :]
+modelx.functionals = {"hiddenstate": hiddenstate}
+
+#def predictionlowquantile(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    lowquantile = -1.95996398454
+#    for k in range(Nx):
+#        result[k, :] = xparticles[k, 0, :] + 0.5 * lowquantile
+#    return result
+#def predictionhiquantile(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    hiquantile = +1.95996398454
+#    for k in range(Nx):
+#        result[k, :] = xparticles[k, 0, :] + 0.5 * hiquantile
+#    return result
 #modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
+# this model is a linear gaussian model, we can specify it
+modelx.setRLinearGaussian(\
+"""
+dlm <- list("FF" = 1, "GG" = %.3f, "V" = %.3f, "W" = %.3f,
+             "m0" = 0, "C0" = 1)
+KF <- function(observations, somedlm){
+  # the notation comes from the package dlm
+  T <- length(observations)
+  m <- rep(0, T + 1); C <- rep(1, T + 1)
+  a <- rep(0, T); R <- rep(0, T)
+  f <- rep(0, T); Q <- rep(0, T)
+  m[1] <- somedlm$m0; C[1] <- somedlm$C0
+  for (t in 1:T){
+    a[t] <- somedlm$GG * m[t]
+    R[t] <- somedlm$GG * C[t] * somedlm$GG + somedlm$W
+    f[t] <- somedlm$FF * a[t]
+    Q[t] <- somedlm$FF * R[t] * somedlm$FF + somedlm$V
+    m[t+1] <- a[t] + R[t] * somedlm$FF * (1 / Q[t]) * (observations[t] - f[t])
+    C[t+1] <- R[t] - R[t] * somedlm$FF * (1 / Q[t]) * somedlm$FF * R[t]
+  }
+  return(list(observations = observations, NextObsMean = f, NextObsVar = Q,
+              NextStateMean = a, NextStatevar = R,
+              FiltStateMean = m[2:(T+1)], FiltStateVar = C[2:(T+1)]))
+}
+getLoglikelihood <- function(KFresults){
+  IncrLogLike <- log(dnorm(KFresults$observations, 
+            mean = KFresults$NextObsMean, 
+            sd = sqrt(KFresults$NextObsVar)))
+  loglikelihood <- sum(IncrLogLike)
+  return(list(IncrLogLike = IncrLogLike, loglikelihood = loglikelihood))
+}
+KFLL <- function(observations, dlm){
+  KFres <- KF(observations, dlm)
+  return(getLoglikelihood(KFres)$loglikelihood)
+}
+trueLogLikelihood <- KFLL(observations, dlm)
+trueIncrlogLikelihood <- getLoglikelihood(KF(observations, dlm))$IncrLogLike
+trueCumLogLikelihood <- cumsum(trueIncrlogLikelihood)
+""" % (modelx.parameters[0], SIGMA2, TAU2))
+Rtruelikelihood = \
+"""
+temptrueloglikelihood <- function(theta){
+    somedlm <- dlm
+    somedlm["GG"] <- theta
+    return(KFLL(observations, somedlm))
+}
+trueloglikelihood <- function(theta){
+    return(sapply(X= theta, FUN= temptrueloglikelihood))
+}
+trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
+normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
+truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
+"""
+modelx.setRtruelikelihood(Rtruelikelihood)
+
 
 
 

@@ -24,7 +24,7 @@
 # Very optional: CUDA (for the model files with their names finishing by "CUDA")
 
 # If RANDOMSEED is True, a new seed is used at each run, otherwise it's fixed (for debugging purposes)
-RANDOMSEED = True
+RANDOMSEED = False
 
 ##########################
 ####  USER PARAMETERS ####
@@ -41,7 +41,7 @@ RANDOMSEED = True
 ### Model and dataset:
 # (see below for possible values)
 MODEL = "simplestmodel"
-T = 250
+T = 50
 #DATASET = "SP500recent"
 DATASET = "synthetic"
 
@@ -50,8 +50,9 @@ DATASET = "synthetic"
 # METHOD could be:
 # SMC2: SMC square as described in Chopin, Jacob and Papaspiliopoulos
 # SOPF: Self Organizing Particle Filter, as described in Kitagawa
-# BSMC: Liu and West's particle filter, as described in SMC in practice
+# BSMC: Self Organizing Particle Filter, as described in Kitagawa
 # adPMCMC: Adaptive PMCMC as described in Peters, Hosack and Hayes
+### (see below for explanations)
 ##########################
 
 METHOD = "SMC2"
@@ -74,9 +75,9 @@ PLOT = True
 ###
 NTHETA = 1000
 NX = 250
-DYNAMICNX = True
+DYNAMICNX = False
 PROPOSALKERNEL = "independent"
-ESSTHRESHOLD = 0.5
+ESSTHRESHOLD = 0.8
 ##########################
 ### Advancer parameters for SMC2
 ## If DYNAMICNX, acceptance rate limit:
@@ -114,10 +115,9 @@ BSMCESSTHRESHOLD = 0.99
 ### adaptive PMCMC algorithm parameters
 # If you want to try the adaptive PMCMC algorithm to compare the results:
 # Number of x-particles:
-NPMCMC = 250
+NPMCMC = 200
 # Number of iterations:
-TPMCMC = 5000
-# burn-in (only for the plots; the whole trajectories are stored)
+TPMCMC = 25000
 PMCMCBURNIN = TPMCMC / 10
 
 ### 
@@ -161,17 +161,17 @@ SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 
 ### Should the program report profiling? (Slows the program a little bit).
-PROFILING = True 
+PROFILING = False
 
 # Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.
 RESULTSFILENAME = "temp"
 # Replace already existing files; if False,
 # a counter will be added to the result file name, so that no existing files are erased.
-REPLACEFILE = False
+REPLACEFILE = True
 # Use subfolders for each model and each dataset to organize the results.
 # If False, use long names and store the results at the root of the results/ folder.
-USESUBFOLDERS = True
+USESUBFOLDERS = False
 # RESULTSFILETYPE could include "RData" and "cpickle".
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs

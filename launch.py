@@ -89,11 +89,17 @@ else:
 userfile.T = min(userfile.T, xmodule.modelx.model_obs.shape[0])
 print "using %i observations out of %i..." % (userfile.T, xmodule.modelx.model_obs.shape[0])
 model_obs = xmodule.modelx.model_obs[0:userfile.T]
+if xmodule.modelx.model_states != "unknown":
+    truestates = xmodule.modelx.model_states[0:userfile.T]
+else:
+    truestates = xmodule.modelx.model_states
+
 
 ### hyperparameters might depend on the data
 thetamodule.modeltheta.hyperparameters = thetamodule.modeltheta.updateHyperParam(thetamodule.modeltheta.hyperparameters, model_obs)
 
-model = {"modelx": xmodule.modelx, "modeltheta": thetamodule.modeltheta, "observations": model_obs}
+model = {"modelx": xmodule.modelx, "modeltheta": thetamodule.modeltheta, "observations": model_obs, \
+        "truestates": truestates}
 
 if len(userfile.SAVINGTIMES) > 0:
     if userfile.METHOD == "adPMCMC":
