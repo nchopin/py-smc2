@@ -24,6 +24,8 @@ from numpy import random, exp, zeros, \
         ones, mean, log, repeat, array, zeros_like, \
         transpose, newaxis, savetxt, genfromtxt, minimum, maximum
 from scipy.stats import norm, truncnorm, gamma
+from numpy import min as numpymin
+from numpy import max as numpymax
 import scipy.weave as weave
 import os
 
@@ -76,14 +78,14 @@ class SSM:
             self.model_states = "unknown"
     def setRLinearGaussian(self, string):
         self.RLinearGaussian = string
-    def setRtruelikelihood(self, string):
-        self.Rtruelikelihood = string
+    def setRlikelihood(self, alist):
+        self.Rlikelihood = alist
 class ParameterModel:
-    def __init__(self, name, dimension, priorandtruevaluesspecified = False):
+    def __init__(self, name, dimension):
         print 'creating parameter model "%s"' % name
         self.name = name
         self.parameterdimension = dimension 
-        self.priorandtruevaluesspecified = priorandtruevaluesspecified
+        #self.priorandtruevaluesspecified = priorandtruevaluesspecified
 #        self.hasInitDistribution = False
         self.plottingInstructions = []
         def update(hyperparameters, observations):
@@ -93,7 +95,7 @@ class ParameterModel:
     def setRtruevalues(self, truevalues):
         self.truevalues = truevalues
     def setRprior(self, Rfunctionlist):
-        self.Rfunctionlist = Rfunctionlist
+        self.Rprior = Rfunctionlist
     def setParameterNames(self, names):
         self.parameternames = names
     def setHyperparameters(self, hyperparameters):
@@ -149,11 +151,23 @@ class ParameterModel:
             if self.whichAreLog[index]:
                 parameters[index, :] = exp(transformedparameters[index, :])
             elif self.whichAreLogit[index]:
-                indOK = transformedparameters[index, :] < 100
-                trparam = zeros_like(transformedparameters[index, :]) + 1
-                #trparam[indOK] = exp(transformedparameters[index, :][indOK]) / (1 + exp(transformedparameters[index, :][indOK]))
-                trparam[indOK] = exp(transformedparameters[index, indOK]) / (1 + exp(transformedparameters[index, indOK]))
-                parameters[index, :] = trparam
+#                indTooBig = (transformedparameters[index, :] > 10)
+#                indTooSmall = (transformedparameters[index, :] < -10)
+#                indProblem = indTooBig | indTooSmall
+#                trparam = zeros_like(transformedparameters[index, :])
+#                trparam[indOK] = exp(transformedparameters[index, :][indOK]) / (1 + exp(transformedparameters[index, :][indOK]))
+#                trparam[1 - indProblem] = exp(transformedparameters[index, 1 - indProblem]) / \
+#                                          (1 + exp(transformedparameters[index, 1 - indProblem]))
+#                trparam[indTooBig] = 1 - exp(-transformedparameters[index, indTooBig])
+#                trparam[indTooSmall] = exp(transformedparameters[index, indTooSmall])
+#                print "\ninside untransform"
+#                print sum(trparam == 1)
+#                print "the problem comes from parameters:"
+#                print transformedparameters[index,:][trparam == 1]
+#                print numpymin(trparam), numpymax(trparam)
+                parameters[index, :] = exp(transformedparameters[index, :]) / (1 + exp(transformedparameters[index, :]))
+                #print "range of the untransformed particles"
+                #print numpymin(parameters[index, :]), numpymax(parameters[index, :])
             else:
                 parameters[index, :] = transformedparameters[index, :]
         return parameters

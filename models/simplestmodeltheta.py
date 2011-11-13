@@ -26,13 +26,18 @@ from src.models import ParameterModel
 
 
 #### See src/models.py for explanations about the model functions.
-#### most functions here take transformed parameters, except rprior
+#### most functions here take transformed parameters, but rprior returns
+#### untransformed parameters
 
 def safelogdlogit(x):
-    y = x.copy()
-    indicesOK = (x < 50)
-    y[indicesOK] = log(1 + exp(x[indicesOK]))
-    return x - 2 * y 
+    #y = x.copy()
+    indTooBig = (x > 10)
+    indTooSmall = (x < -10)
+    indProblem = indTooBig | indTooSmall
+#    y[1 - indProblem] = log(1 + exp(x[1 - indProblem]))
+    result = x - 2 * log(1 + exp(x))
+    result[indProblem] = -10**10
+    return result
 def logdprior(parameters, hyperparameters):
     """ Takes transformed parameters.  When the parameter is transformed, 
     a jacobian appears in the formula.
@@ -44,7 +49,7 @@ def logdprior(parameters, hyperparameters):
 
 def rprior(size, hyperparameters):
     """ returns untransformed parameters """
-    rho = random.uniform(size = size, low = 0, high = 1) 
+    rho = random.uniform(size = size, low = 0.01, high = 0.99) 
     #sigma = 1 / gamma.rvs(hyperparameters["sigma_shape"], scale = hyperparameters["sigma_scale"], size = size)
     #tau = 1 / gamma.rvs(hyperparameters["tau_shape"], scale = hyperparameters["tau_scale"], size = size)
     parameters = zeros((1, size))

@@ -161,7 +161,7 @@ trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
 normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
 truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
 """
-modelx.setRtruelikelihood(Rtruelikelihood)
+modelx.setRlikelihood([Rtruelikelihood])
 
 
 

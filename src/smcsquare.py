@@ -194,25 +194,12 @@ class SMCsquare:
                     self.xparticles[:, :, i] = proposedSIRs.xparticles[:, :, i].copy()
         acceptrate = sum(acceptations) / self.Ntheta
         self.acceptratios.append(acceptrate)
-        #print "acceptance rate: %.3f" % (acceptrate)
-    def correctWeightsFromInitToPrior(self):
-        correction = zeros(self.Ntheta)
-        for i in range(self.Ntheta):
-            correction[i] = self.modeltheta.priorlogdensity(self.transformedthetaparticles[:, i]) - \
-                            self.modeltheta.dinit(self.transformedthetaparticles[:, i])
-        return correction
     def first_step(self):
         """
         First step: generate Ntheta theta-particles from the prior, and then
         for each theta_i, simulate Nx x-particles from the initial distribution
         p(x_0 | theta_i)
         """
-        #if self.modeltheta.hasInitDistribution:
-        #    print "init distribution is specified, using it..."
-        #    self.thetaparticles[...] = self.modeltheta.rinit(self.Ntheta)
-        #    self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
-        #else:
-        #print "no init distribution is specified, using prior distribution instead..."
         self.thetaparticles[...] = self.modeltheta.priorgenerator(self.Ntheta)
         self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
         for i in range(self.Ntheta):
@@ -244,7 +231,7 @@ class SMCsquare:
             self.xweights[...] = exp(self.logxweights)
             self.logLike[:] = log(mean(self.xweights, axis = 0)) + self.constants[:]
             # prediction: at this point we have the transitioned x-particles and we didn't update
-            # the weights of the theta-particles
+            # the weights of the theta-particles, and the x-particles are weighted
             if self.predictionEnable:
                 self.prediction(t)
             if t > 0:
@@ -300,13 +287,11 @@ class SMCsquare:
             if t in self.savingtimes or t == self.T - 1:
                 print "\nsaving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
-                #if self.modeltheta.hasInitDistribution:
-                #    self.weighthistory[self.alreadystored, ...] = \
-                #            exp(self.thetalogweights[t, :] + self.correctWeightsFromInitToPrior())
-                #else:
                 self.weighthistory[self.alreadystored, ...] = exp(self.thetalogweights[t, :])
                 self.alreadystored += 1
     def prediction(self, t):
+        # warning: this should take the weight of the x-particles into account!!
+        # replace the mean by the weighted average
         for key in self.predicted.keys():
             tempmatrix = self.modelx.predictionfunctionals[key](self.xparticles, self.thetaparticles, t)
             tempmatrix = mean(tempmatrix, axis = 0)
@@ -339,11 +324,19 @@ class SMCsquare:
         print "smoothing done!"
 
     def computeCovarianceAndMean(self, t):
+        #print self.transformedthetaparticles.shape
         X = transpose(self.transformedthetaparticles)
+        #print "\nrange of the transformed particles:"
+        #print numpymin(self.transformedthetaparticles), numpymax(self.transformedthetaparticles)
+        #print "counting the ones"
+        #print sum(self.thetaparticles == 1)
+        #print X.shape
         w = exp(self.thetalogweights[t, :])
         w = w / numpysum(w)
         weightedmean = average(X, weights = w, axis = 0)
+        #print weightedmean.shape
         diagw = diag(w)
+        #print diagw.shape
         part1 = dot(transpose(X), dot(diagw, X))
         Xtw = dot(transpose(X), w[:, newaxis])
         part2 = dot(Xtw, transpose(Xtw))

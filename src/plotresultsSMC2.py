@@ -107,13 +107,13 @@ g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
 %s
 g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size = 1)
 """ % self.modeltheta.Rfunctionlist[parameterindex]
-            if hasattr(self.modelx, "Rtruelikelihood"):
+            if hasattr(self.modelx, "Rlikelihood"):
                 self.Rcode += \
 """
 %s
 trueposterior <- function(x) priorfunction(x) * truelikelihood(x)
 g <- g + stat_function(fun = trueposterior, colour = "green", size = 2)
-""" % self.modelx.Rtruelikelihood
+""" % self.modelx.Rlikelihood[parameterindex]
         self.Rcode += \
 """
 print(g)

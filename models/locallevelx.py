@@ -83,7 +83,56 @@ modelx.setRLinearGaussian(\
 """
 dlm <- list("FF" = 1, "GG" = 1, "V" = %.3f, "W" = %.3f,
              "m0" = 0, "C0" = 1)
+KF <- function(observations, somedlm){
+  # the notation comes from the package dlm
+  T <- length(observations)
+  m <- rep(0, T + 1); C <- rep(1, T + 1)
+  a <- rep(0, T); R <- rep(0, T)
+  f <- rep(0, T); Q <- rep(0, T)
+  m[1] <- somedlm$m0; C[1] <- somedlm$C0
+  for (t in 1:T){
+    a[t] <- somedlm$GG * m[t]
+    R[t] <- somedlm$GG * C[t] * somedlm$GG + somedlm$W
+    f[t] <- somedlm$FF * a[t]
+    Q[t] <- somedlm$FF * R[t] * somedlm$FF + somedlm$V
+    m[t+1] <- a[t] + R[t] * somedlm$FF * (1 / Q[t]) * (observations[t] - f[t])
+    C[t+1] <- R[t] - R[t] * somedlm$FF * (1 / Q[t]) * somedlm$FF * R[t]
+  }
+  return(list(observations = observations, NextObsMean = f, NextObsVar = Q,
+              NextStateMean = a, NextStatevar = R,
+              FiltStateMean = m[2:(T+1)], FiltStateVar = C[2:(T+1)]))
+}
+getLoglikelihood <- function(KFresults){
+  IncrLogLike <- log(dnorm(KFresults$observations, 
+            mean = KFresults$NextObsMean, 
+            sd = sqrt(KFresults$NextObsVar)))
+  loglikelihood <- sum(IncrLogLike)
+  return(list(IncrLogLike = IncrLogLike, loglikelihood = loglikelihood))
+}
+KFLL <- function(observations, dlm){
+  KFres <- KF(observations, dlm)
+  return(getLoglikelihood(KFres)$loglikelihood)
+}
+trueLogLikelihood <- KFLL(observations, dlm)
+trueIncrlogLikelihood <- getLoglikelihood(KF(observations, dlm))$IncrLogLike
+trueCumLogLikelihood <- cumsum(trueIncrlogLikelihood)
 """ % (modelx.parameters[1], modelx.parameters[0]))
+Rtruelikelihood = \
+"""
+temptrueloglikelihood <- function(theta){
+    somedlm <- dlm
+    somedlm["GG"] <- theta
+    return(KFLL(observations, somedlm))
+}
+trueloglikelihood <- function(theta){
+    return(sapply(X= theta, FUN= temptrueloglikelihood))
+}
+trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
+normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
+truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
+"""
+modelx.setRlikelihood([Rtruelikelihood, Rtruelikelihood])
+
 
 #def predictionlowquantile(xparticles, thetaparticles, t):
 #    Nx = xparticles.shape[0]

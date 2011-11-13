@@ -66,19 +66,19 @@ g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
 """
 g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
 """
-        if hasattr(self.modeltheta, "Rfunctionlist"):
+        if hasattr(self.modeltheta, "Rprior"):
             self.Rcode += \
 """
 %s
 g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size = 1)
-""" % self.modeltheta.Rfunctionlist[parameterindex]
-            if hasattr(self.modelx, "Rtruelikelihood"):
+""" % self.modeltheta.Rprior[parameterindex]
+            if hasattr(self.modelx, "Rlikelihood"):
                 self.Rcode += \
 """
 %s
 trueposterior <- function(x) priorfunction(x) * truelikelihood(x)
 g <- g + stat_function(fun = trueposterior, colour = "green", size = 2)
-""" % self.modelx.Rtruelikelihood
+""" % self.modelx.Rlikelihood[parameterindex]
         self.Rcode += \
 """
 print(g)

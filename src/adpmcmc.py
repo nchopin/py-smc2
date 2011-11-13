@@ -93,6 +93,7 @@ class AdaptivePMCMC:
         self.transformedchain[:, iteration] = self.transformedtheta.copy()
         if iteration > 10:
             self.adaptiveproposalcovmatrix = (5.6644 / self.thetadim) * cov(self.transformedchain[:, 1:iteration])
+            #print "\n", self.adaptiveproposalcovmatrix
         self.loglikechain[iteration] = self.totalLogLike
         self.acceptations[iteration] = acceptation
     def allsteps(self):

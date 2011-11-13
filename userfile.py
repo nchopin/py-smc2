@@ -40,8 +40,8 @@ RANDOMSEED = False
 ##########################
 ### Model and dataset:
 # (see below for possible values)
-MODEL = "simplestmodel"
-T = 50
+MODEL = "SVonefactor"
+T = 100
 #DATASET = "SP500recent"
 DATASET = "synthetic"
 
@@ -75,9 +75,9 @@ PLOT = True
 ###
 NTHETA = 1000
 NX = 250
-DYNAMICNX = False
+DYNAMICNX = True
 PROPOSALKERNEL = "independent"
-ESSTHRESHOLD = 0.8
+ESSTHRESHOLD = 0.5
 ##########################
 ### Advancer parameters for SMC2
 ## If DYNAMICNX, acceptance rate limit:
@@ -117,7 +117,7 @@ BSMCESSTHRESHOLD = 0.99
 # Number of x-particles:
 NPMCMC = 200
 # Number of iterations:
-TPMCMC = 25000
+TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 
 ### 
@@ -161,7 +161,7 @@ SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 
 ### Should the program report profiling? (Slows the program a little bit).
-PROFILING = False
+PROFILING = True
 
 # Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.

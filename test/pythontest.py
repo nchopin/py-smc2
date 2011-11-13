@@ -36,3 +36,17 @@ allK = random.poisson(lam = 0, size = 1)
 print len(allK)
 allK[allK > 10000] = -1000
 print allK
+x = array([1, 2, 3, 5])
+ind = x > 2.4
+print ind
+x[1 - ind] = 99
+print x
+
+
+a = array([True, False, False, False])
+b = array([False, False, True, False])
+print 1 - (a | b)
+
+
+
+
