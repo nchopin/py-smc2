@@ -144,14 +144,14 @@ KF <- function(observations, somedlm){
     def addKalmanComparison(self):
         self.Rcode += \
 """
-    kalmanresults <- KF(observations, dlm)
-    #xhat <- apply(X=xhistory[,1,2:(T+1)], MARGIN = 2, FUN=mean)
-    g <- qplot(x = 1:T, y = meanpath, geom = "line", colour = "SMC mean") +
+kalmanresults <- KF(observations, dlm)
+#xhat <- apply(X=xhistory[,1,2:(T+1)], MARGIN = 2, FUN=mean)
+g <- qplot(x = 1:T, y = meanpath, geom = "line", colour = "SMC mean") +
      geom_line(aes(y = kalmanresults$FiltStateMean, colour = "KF mean"), alpha = 0.) + 
      geom_point(aes(y = kalmanresults$FiltStateMean, colour = "KF mean")) +
      geom_point(aes(y = truestates, colour= "Truth")) + 
      xlab("time") + ylab("hidden state") + scale_colour_discrete(name = "")
-    print(g)
+print(g)
 if (exists("xhistory")){
     for (index in 1:length(savingtimes)){
         sometime <- savingtimes[index]

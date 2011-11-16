@@ -41,7 +41,7 @@ RANDOMSEED = False
 ### Model and dataset:
 # (see below for possible values)
 MODEL = "SVonefactor"
-T = 100
+T = 50
 #DATASET = "SP500recent"
 DATASET = "synthetic"
 
@@ -55,7 +55,7 @@ DATASET = "synthetic"
 ### (see below for explanations)
 ##########################
 
-METHOD = "SMC2"
+METHOD = "BSMC"
 
 ##########################
 ### Plot options
@@ -101,7 +101,7 @@ NSOPF = 100000
 ### BSMC algorithm parameters
 # If you want to try the BSMC algorithm to compare the results,
 # specify the number of particles here:
-NBSMC = 10000
+NBSMC = 1000
 # specify the "h" factor used in the kernel density approximation
 # of the distribution of the parameters given the data
 # should be "slowly decreasing with N", N being the number of particles
@@ -155,10 +155,11 @@ PMCMCBURNIN = TPMCMC / 10
 #SAVINGTIMES = [250, 500, 750]
 SAVINGTIMES = []
 SMOOOTHING = False
-FILTERING = False
-PREDICTION = False
+FILTERING = True
+PREDICTION = True
 SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
+COMPAREKALMAN = False
 
 ### Should the program report profiling? (Slows the program a little bit).
 PROFILING = True

@@ -22,7 +22,8 @@
 from __future__ import division
 from numpy import random, exp, zeros, \
         ones, mean, log, repeat, array, zeros_like, \
-        transpose, newaxis, savetxt, genfromtxt, minimum, maximum
+        transpose, newaxis, savetxt, genfromtxt, minimum, maximum, \
+        argsort, var, cumsum, searchsorted, average
 from scipy.stats import norm, truncnorm, gamma
 from numpy import min as numpymin
 from numpy import max as numpymax
@@ -36,8 +37,6 @@ class SSM:
         self.xdimension = xdimension
         self.ydimension = ydimension
         self.excludedobservations = []
-        self.functionals = {}
-        self.predictionfunctionals = {}
     def setFirstStateGenerator(self, function):
         self.firstStateGenerator = function
     def setVectorTransition(self, function):
@@ -46,6 +45,10 @@ class SSM:
         self.transitionAndWeight = function
     def setObservationGenerator(self, function):
         self.observationGenerator = function
+    def setFiltering(self, dictionary):
+        self.filteringdict = dictionary
+    def setPrediction(self, l):
+        self.predictionlist = l
     def generateData(self, size, parameters, savefilename):
         print "generating data"
         self.parameters = parameters
@@ -78,15 +81,50 @@ class SSM:
             self.model_states = "unknown"
     def setRLinearGaussian(self, string):
         self.RLinearGaussian = string
-    def setRlikelihood(self, alist):
-        self.Rlikelihood = alist
+        self.RLinearGaussian += \
+"""
+KF <- function(observations, somedlm){
+  T <- length(observations)
+  m <- rep(0, T + 1); C <- rep(1, T + 1)
+  a <- rep(0, T); R <- rep(0, T)
+  f <- rep(0, T); Q <- rep(0, T)
+  m[1] <- somedlm$m0; C[1] <- somedlm$C0
+  for (t in 1:T){
+    a[t] <- somedlm$GG * m[t]
+    R[t] <- somedlm$GG * C[t] * somedlm$GG + somedlm$W
+    f[t] <- somedlm$FF * a[t]
+    Q[t] <- somedlm$FF * R[t] * somedlm$FF + somedlm$V
+    m[t+1] <- a[t] + R[t] * somedlm$FF * (1 / Q[t]) * (observations[t] - f[t])
+    C[t+1] <- R[t] - R[t] * somedlm$FF * (1 / Q[t]) * somedlm$FF * R[t]
+  }
+  return(list(observations = observations, NextObsMean = f, NextObsVar = Q,
+              NextStateMean = a, NextStatevar = R,
+              FiltStateMean = m[2:(T+1)], FiltStateVar = C[2:(T+1)]))
+}
+kalmanresults <- KF(observations, dlm)
+getLoglikelihood <- function(KFresults){
+  IncrLogLike <- log(dnorm(KFresults$observations, 
+            mean = KFresults$NextObsMean, 
+            sd = sqrt(KFresults$NextObsVar)))
+  loglikelihood <- sum(IncrLogLike)
+  return(list(IncrLogLike = IncrLogLike, loglikelihood = loglikelihood))
+}
+KFLL <- function(observations, dlm){
+  KFres <- KF(observations, dlm)
+  return(getLoglikelihood(KFres)$loglikelihood)
+}
+trueLogLikelihood <- KFLL(observations, dlm)
+trueIncrlogLikelihood <- getLoglikelihood(KF(observations, dlm))$IncrLogLike
+trueCumLogLikelihood <- cumsum(trueIncrlogLikelihood)
+"""
+    def setRmarginals(self, string):
+        self.Rmarginals = string
+
 class ParameterModel:
     def __init__(self, name, dimension):
         print 'creating parameter model "%s"' % name
         self.name = name
         self.parameterdimension = dimension 
-        #self.priorandtruevaluesspecified = priorandtruevaluesspecified
-#        self.hasInitDistribution = False
         self.plottingInstructions = []
         def update(hyperparameters, observations):
             return hyperparameters
@@ -128,10 +166,6 @@ class ParameterModel:
         elif proposalkernel == "independent":
             proposedparameters = proposalmean[:, newaxis] + noise
         return proposedparameters
-#    def setInitDistribution(self, rfunction, dfunction):
-#        self.hasInitDistribution = True
-#        self.rinit = rfunction
-#        self.dinit = dfunction
     def setTransformation(self, transformations):
         self.whichAreLog = [transfo == "log" for transfo in transformations]
         self.whichAreLogit = [transfo == "logit" for transfo in transformations]

@@ -1,14 +1,10 @@
  - ajouter aux resultats de SMC2 le nombre d'appel a TransitionAndWeights
  en comptant tout (ie y compris les etapes de PMCMC)
  - faire un launcher pour lancer N fois un algo et faire des plots R comparant les resultats.
- - state filtering (automatic) & hidden state prediction 
  - compute evidence using L&W
- - state prediction : SMC^2 verus L & W
- - FIX current bugs : logit transform in SVmultifactor (do the safe trick as in simplestmodel)
- - check that SMC on LG models does work (check x-particles against KF)
- - launcher pour parallel SMC
+ - state prediction : SMC^2 versus L & W
  - regler quantile predictif: simuler des y_t+1 sachant x_t, theta, et se debrouiller avec des 
  quantiles ponderes...
+ - fonctionnelles predictives: permettre des fonctionnelles à valeur dans R^d avec d > 1
  - calculer l'evidence avec L&W en prenant le produit de la moyenne des poids
- - graphe de variance de Zhat
 

@@ -22,7 +22,8 @@
 from __future__ import division
 from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
-        array, zeros_like, newaxis
+        array, zeros_like, newaxis, \
+        argsort, var, cumsum, searchsorted
 from numpy import sum as numpysum
 from numpy import max as numpymax
 from scipy.stats import norm, truncnorm, gamma
@@ -62,8 +63,9 @@ def firstStateGenerator(parameters, size):
     first_state[:, 1] = random.gamma(size = size, shape = (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
     return first_state
 def observationGenerator(states, parameters):
+    correctedscale = sqrt(abs(states[:, 0])) + 10**(-5) 
     return random.normal(size = states.shape[0], loc = parameters[0] + parameters[1] * states[:, 0], \
-            scale = sqrt(abs(states[:, 0])))[:, newaxis]
+            scale = correctedscale)[:, newaxis]
 def subtransitionAndWeight(states, y, parameters, alluniforms, allK):
     code = \
     """
@@ -151,26 +153,33 @@ def firststate(xparticles, thetaparticles, t):
     return xparticles[:, 0, :]
 def secondstate(xparticles, thetaparticles, t):
     return xparticles[:, 1, :]
-modelx.functionals = {"firststate": firststate, "secondstate": secondstate}
-# prediction
-def predictionlowquantile(xparticles, thetaparticles, t):
+modelx.setFiltering({"firststate": firststate, "secondstate": secondstate})
+def predictionObservations(xparticles, thetaweights, thetaparticles, t):
     Nx = xparticles.shape[0]
     Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    lowquantile = -1.95996398454
-    for k in range(Nx):
-        result[k, :] = thetaparticles[0, :] + thetaparticles[1, :] * xparticles[k, 0, :] + \
-                       sqrt(abs(xparticles[k, 0, :])) * lowquantile
+    result = zeros(3)
+    observations = zeros(Nx * Ntheta)
+    weightobs = zeros(Nx * Ntheta)
+    for j in range(Ntheta):
+        observations[(Nx * j):(Nx * (j+1))] = \
+                observationGenerator(xparticles[..., j], thetaparticles[:, j]).reshape(Nx)
+        weightobs[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
+    weightobs = weightobs / sum(weightobs)
+    obsmean = average(observations, weights = weightobs)
+    ind = argsort(observations)
+    observations = observations[ind]
+    weightobs = weightobs[ind]
+    cumweightobs = cumsum(weightobs)
+    quantile5 = observations[searchsorted(cumweightobs, 0.05)]
+    quantile95 = observations[searchsorted(cumweightobs, 0.95)]
+    result[0] = obsmean
+    result[1] = quantile5
+    result[2] = quantile95
     return result
-def predictionhiquantile(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    hiquantile = +1.95996398454
-    for k in range(Nx):
-        result[k, :] = thetaparticles[0, :] + thetaparticles[1, :] * xparticles[k, 0, :] + \
-                       sqrt(abs(xparticles[k, 0, :])) * hiquantile 
-    return result
-modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
+
+modelx.setPrediction([{"function": predictionObservations, "dimension": 3, "name": "obs"}])
+
+
+
 
 

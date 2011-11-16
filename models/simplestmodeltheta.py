@@ -74,14 +74,6 @@ if ("predictedlowquantile" %in% ls() && "predictedhiquantile" %in% ls()){
     g <- g + xlab("time") + ylab("observations")
     print(g)
 }
-if (exists("truestates")){
-    if (length(truestates) > 1){
-      g <- qplot(x = 1:T, y = truestates, geom = "line")
-      g <- g + geom_line(aes(y = filteredhiddenstate), colour = "red")
-      g <- g + xlab("time") + ylab("true states")
-      print(g)
-    }
-}
 """
 uniformprior = \
 """

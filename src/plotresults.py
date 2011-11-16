@@ -57,10 +57,12 @@ truevalues <- c(%s)
         if len(self.modeltheta.plottingInstructions) > 0:
             self.plottingInstructions = self.modeltheta.plottingInstructions
         self.additionalPlots = self.modeltheta.additionalPlots
-    def setModelX(self, modelx):
+    def setModelX(self, modelx, compareKalman):
         self.modelx = modelx
         if hasattr(self.modelx, "RLinearGaussian"):
             self.Rcode += "\n" + self.modelx.RLinearGaussian
+            if hasattr(self.modelx, "Rmarginals") and compareKalman:
+                self.Rcode += "\n" + self.modelx.Rmarginals
     def setParameters(self, names):
         self.parameterdimension = len(names)
         self.parameternames = names
@@ -77,7 +79,23 @@ g <- ggplot(data = observationsDF, aes(x = index, y = y))
 g <- g + geom_line() + ylab("observations")
 print(g)
 """
-
+    def addPredictedObs(self):
+            self.Rcode += \
+"""
+if (exists("predictedobs")){
+    g <- qplot(x = 1:T, y = observations, geom = "line", colour = "observations")
+    g <- g + geom_line(aes(y = predictedobs[,1], colour = "SMC2 predicted mean"))
+    g <- g + geom_line(aes(y = predictedobs[,2], colour = "SMC2 90 pct confidence"))
+    g <- g + geom_line(aes(y = predictedobs[,3], colour = "SMC2 90 pct confidence"))
+    g <- g + scale_colour_discrete(name = "")
+    if (exists("KF")){
+        KFresults <- KF(observations, dlm)
+        g <- g + geom_line(aes(y = KFresults$NextObsMean, colour = "KF predicted mean"))
+    }
+    g <- g + xlab("time") + ylab("observations")
+    print(g)
+}
+"""
     def close(self):
         self.Rcode += self.additionalPlots
         self.Rcode += \

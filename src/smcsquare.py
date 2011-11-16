@@ -65,10 +65,9 @@ class SMCsquare:
         self.totalLogLike = zeros(self.Ntheta)
         self.evidences = zeros(self.T)
         ## Filtering and Smoothing
-        self.filteringEnable = algorithmparameters["filtering"]
         self.filtered = {}
-        if self.filteringEnable:
-            for functionalnames in self.modelx.functionals.keys():
+        if self.AP["filtering"]:
+            for functionalnames in self.modelx.filteringdict.keys():
                 self.filtered[functionalnames] = zeros(self.T)
         self.smoothingEnable = algorithmparameters["smoothing"]
         self.smoothedmeans = {}
@@ -77,11 +76,12 @@ class SMCsquare:
             self.smoothingtimes = algorithmparameters["smoothingtimes"]
             self.storesmoothingtime = algorithmparameters["storesmoothingtime"]
         ## Prediction
-        self.predictionEnable = algorithmparameters["prediction"]
-        self.predicted = {}
-        if self.predictionEnable:
-            for functionalnames in self.modelx.predictionfunctionals.keys():
-                self.predicted[functionalnames] = zeros(self.T)
+        if self.AP["prediction"]:
+            #self.predictedObs = zeros((self.T, 3))
+            if hasattr(self.modelx, "predictionlist"):
+                self.predicted = []
+                for d in self.modelx.predictionlist:
+                    self.predicted.append(zeros((self.T, d["dimension"])))
         ## other things:
         # store ESS at each time
         self.ESS = zeros(self.T)
@@ -231,8 +231,8 @@ class SMCsquare:
             self.xweights[...] = exp(self.logxweights)
             self.logLike[:] = log(mean(self.xweights, axis = 0)) + self.constants[:]
             # prediction: at this point we have the transitioned x-particles and we didn't update
-            # the weights of the theta-particles, and the x-particles are weighted
-            if self.predictionEnable:
+            # the weights of the theta-particles, and the x-particles are not weighted
+            if self.AP["prediction"]:
                 self.prediction(t)
             if t > 0:
                 self.evidences[t] = self.getEvidence(self.thetalogweights[t-1, :], self.logLike)
@@ -280,7 +280,7 @@ class SMCsquare:
             self.computingtimes[t] = new_tic - last_tic
             last_tic = new_tic
             """ filtering and smoothing """
-            if self.filteringEnable:
+            if self.AP["filtering"]:
                 self.filtering(t)
             if self.smoothingEnable and (t in self.smoothingtimes):
                 self.smoothing(t)
@@ -290,15 +290,13 @@ class SMCsquare:
                 self.weighthistory[self.alreadystored, ...] = exp(self.thetalogweights[t, :])
                 self.alreadystored += 1
     def prediction(self, t):
-        # warning: this should take the weight of the x-particles into account!!
-        # replace the mean by the weighted average
-        for key in self.predicted.keys():
-            tempmatrix = self.modelx.predictionfunctionals[key](self.xparticles, self.thetaparticles, t)
-            tempmatrix = mean(tempmatrix, axis = 0)
-            self.predicted[key][t] = average(tempmatrix, weights = exp(self.thetalogweights[t,:]))
+        if hasattr(self.modelx, "predictionlist"):
+            for index, d in enumerate(self.modelx.predictionlist):
+                self.predicted[index][t, :] = d["function"](self.xparticles, \
+                    exp(self.thetalogweights[t-1,:]), self.thetaparticles, t)
     def filtering(self, t):
         for key in self.filtered.keys():
-            tempmatrix = self.modelx.functionals[key](self.xparticles, self.thetaparticles, t)
+            tempmatrix = self.modelx.filteringdict[key](self.xparticles, self.thetaparticles, t)
             tempmatrix = mean(tempmatrix, axis = 0)
             self.filtered[key][t] = average(tempmatrix, weights = exp(self.thetalogweights[t,:]))
     def smoothing(self, t):
@@ -365,8 +363,13 @@ class SMCsquare:
                 "acceptratios": self.acceptratios, "Nxlist": self.Nxlist, \
                 "increaseindices": self.increaseindices, "resamplingindices": self.resamplingindices, \
                 "evidences": self.evidences, "filtered": self.filtered, "smoothedmeans": self.smoothedmeans, \
-                "smoothedvalues": self.smoothedvalues, "predicted": self.predicted, \
+                "smoothedvalues": self.smoothedvalues, \
                 "computingtimes": self.computingtimes, "truestates": self.truestates}
+        if self.AP["prediction"]:
+            #resultsDict.update({"predictedObs": self.predictedObs})
+            if hasattr(self, "predicted"):
+                for index, d in enumerate(self.modelx.predictionlist):
+                    resultsDict.update({"predicted%s" % d["name"]: self.predicted[index]})
         return resultsDict
 
 

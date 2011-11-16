@@ -20,6 +20,7 @@ test*R
 *.pyc
 *-userfile.py
 *-plots.R
+*-plot.R
 *-profile.txt
 
 syntax: regexp

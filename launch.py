@@ -248,7 +248,7 @@ if userfile.GENERATERFILE:
         plotter = PlotResultsBSMC(resultsfolder, RDatafile)
     plotter.setParameters(thetamodule.modeltheta.parameternames)
     plotter.setModelTheta(thetamodule.modeltheta)
-    plotter.setModelX(xmodule.modelx)
+    plotter.setModelX(xmodule.modelx, userfile.COMPAREKALMAN)
     plotter.everything()
     if userfile.PLOT:
         import subprocess

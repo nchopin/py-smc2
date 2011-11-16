@@ -87,81 +87,31 @@ modelx.setTransitionAndWeight(transitionAndWeight)
 # (untransformed parameters)
 modelx.parameters = array([rho])
 
-def hiddenstate(xparticles, thetaparticles, t):
+def firststate(xparticles, thetaparticles, t):
     return xparticles[:, 0, :]
-modelx.functionals = {"hiddenstate": hiddenstate}
-
-#def predictionlowquantile(xparticles, thetaparticles, t):
-#    Nx = xparticles.shape[0]
-#    Ntheta = xparticles.shape[2]
-#    result = zeros((Nx, Ntheta))
-#    lowquantile = -1.95996398454
-#    for k in range(Nx):
-#        result[k, :] = xparticles[k, 0, :] + 0.5 * lowquantile
-#    return result
-#def predictionhiquantile(xparticles, thetaparticles, t):
-#    Nx = xparticles.shape[0]
-#    Ntheta = xparticles.shape[2]
-#    result = zeros((Nx, Ntheta))
-#    hiquantile = +1.95996398454
-#    for k in range(Nx):
-#        result[k, :] = xparticles[k, 0, :] + 0.5 * hiquantile
-#    return result
-#modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
+modelx.setFiltering({"firststate": firststate})
 # this model is a linear gaussian model, we can specify it
 modelx.setRLinearGaussian(\
 """
 dlm <- list("FF" = 1, "GG" = %.3f, "V" = %.3f, "W" = %.3f,
              "m0" = 0, "C0" = 1)
-KF <- function(observations, somedlm){
-  # the notation comes from the package dlm
-  T <- length(observations)
-  m <- rep(0, T + 1); C <- rep(1, T + 1)
-  a <- rep(0, T); R <- rep(0, T)
-  f <- rep(0, T); Q <- rep(0, T)
-  m[1] <- somedlm$m0; C[1] <- somedlm$C0
-  for (t in 1:T){
-    a[t] <- somedlm$GG * m[t]
-    R[t] <- somedlm$GG * C[t] * somedlm$GG + somedlm$W
-    f[t] <- somedlm$FF * a[t]
-    Q[t] <- somedlm$FF * R[t] * somedlm$FF + somedlm$V
-    m[t+1] <- a[t] + R[t] * somedlm$FF * (1 / Q[t]) * (observations[t] - f[t])
-    C[t+1] <- R[t] - R[t] * somedlm$FF * (1 / Q[t]) * somedlm$FF * R[t]
-  }
-  return(list(observations = observations, NextObsMean = f, NextObsVar = Q,
-              NextStateMean = a, NextStatevar = R,
-              FiltStateMean = m[2:(T+1)], FiltStateVar = C[2:(T+1)]))
-}
-getLoglikelihood <- function(KFresults){
-  IncrLogLike <- log(dnorm(KFresults$observations, 
-            mean = KFresults$NextObsMean, 
-            sd = sqrt(KFresults$NextObsVar)))
-  loglikelihood <- sum(IncrLogLike)
-  return(list(IncrLogLike = IncrLogLike, loglikelihood = loglikelihood))
-}
-KFLL <- function(observations, dlm){
-  KFres <- KF(observations, dlm)
-  return(getLoglikelihood(KFres)$loglikelihood)
-}
-trueLogLikelihood <- KFLL(observations, dlm)
-trueIncrlogLikelihood <- getLoglikelihood(KF(observations, dlm))$IncrLogLike
-trueCumLogLikelihood <- cumsum(trueIncrlogLikelihood)
 """ % (modelx.parameters[0], SIGMA2, TAU2))
-Rtruelikelihood = \
-"""
-temptrueloglikelihood <- function(theta){
-    somedlm <- dlm
-    somedlm["GG"] <- theta
-    return(KFLL(observations, somedlm))
-}
-trueloglikelihood <- function(theta){
-    return(sapply(X= theta, FUN= temptrueloglikelihood))
-}
-trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
-normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
-truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
-"""
-modelx.setRlikelihood([Rtruelikelihood])
+
+#Rtruelikelihood = \
+#"""
+#temptrueloglikelihood <- function(theta){
+#    somedlm <- dlm
+#    somedlm["GG"] <- theta
+#    return(KFLL(observations, somedlm))
+#}
+#trueloglikelihood <- function(theta){
+#    return(sapply(X= theta, FUN= temptrueloglikelihood))
+#}
+#trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
+#normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
+#truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
+#"""
+#modelx.setRmarginals([Rtruelikelihood])
 
 
 

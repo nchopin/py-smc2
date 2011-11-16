@@ -34,7 +34,7 @@ from src.parallelSIRs import ParallelSIRs
 import subprocess
 
 random.seed(17)
-MODEL = "simplestmodel"
+MODEL = "locallevel"
 
 THISPATH = get_path()
 
@@ -48,12 +48,12 @@ f, filename, description = imp.find_module(thetamodulename)
 thetamodule = imp.load_module("thetamodule", f, filename, description)
 
 print "Creating data set..."
-xmodule.modelx.generateData(1000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
+xmodule.modelx.generateData(5000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
 
 nbparameters = thetamodule.modeltheta.parameterdimension
-Nx = 1000
-Ntheta = 2500
-T = min(100, xmodule.modelx.model_obs.shape[0])
+Nx = 100
+Ntheta = 1000
+T = min(500, xmodule.modelx.model_obs.shape[0])
 model_obs = xmodule.modelx.model_obs[0:T, :]
 model_states = xmodule.modelx.model_states[0:T, :]
 
@@ -77,7 +77,19 @@ SMCLogLikelihoods = parallelSIRs.getTotalLogLike()
 results = {"SMCLL": SMCLogLikelihoods,
            "observations": model_obs,
            "allLL": parallelSIRs.allLL}
-RDatafile = "/tmp/parallelSMCres.RData"
+resultsfolder = os.path.join(THISPATH, "results")
+basename = "parallelSMC"
+basename = basename + "T%iNx%iNtheta%i" % (T, Nx, Ntheta)
+tryname = basename
+RDatafile = os.path.join(resultsfolder, basename)
+counter = 0
+while os.path.isfile(os.path.join(resultsfolder, tryname + ".RData")):
+    counter += 1
+    tryname = basename + "(%i)" % counter
+print "results in %s" % resultsfolder
+RDatafile = os.path.join(resultsfolder, tryname + ".RData")
+pdffile = os.path.basename(RDatafile.replace(".RData", ".pdf"))
+plotresultsfile = os.path.join(resultsfolder, RDatafile.replace(".RData", "-plots.R"))
 try:
     import rpy2
     from snippets.pickletoRdata import dictionary2RDataWithRPY 
@@ -86,9 +98,6 @@ except ImportError:
     print "I'd recommend installing rpy2 for faster saving of the results in RData..."
     from snippets.pickletoRdata import dictionary2RDataWithoutRPY
     dictionary2RDataWithoutRPY(results, RDatafilename = RDatafile)
-resultsfolder = os.path.join(THISPATH, "results")
-print "results in %s" % resultsfolder
-pdffile = os.path.basename(RDatafile.replace(".RData", ".pdf"))
 Rcode = \
 """
 rm(list = ls())
@@ -143,36 +152,32 @@ trueCumLogLikelihood <- cumsum(trueIncrlogLikelihood)
 """
 Rcode += \
 """
-g <- qplot(x = SMCLL, geom = "blank") + geom_histogram(aes(y = ..density..)) + geom_density(alpha = 0.2, fill = "blue") +
-    geom_vline(xintercept = trueLogLikelihood, size = 2, colour = "red", linetype = 2) + 
-    xlab("log likelihoods")
+g <- qplot(x = exp(SMCLL), geom = "blank") + geom_histogram(aes(y = ..density..)) + geom_density(alpha = 0.2, fill = "blue")
+g <- g + geom_vline(xintercept = exp(trueLogLikelihood), size = 2, colour = "green", linetype = 2)
+g <- g + geom_vline(xintercept = mean(exp(SMCLL)), size = 2, colour = "red", linetype = 3)
+g <- g + xlab("likelihoods (log scale)") + scale_x_log()
 print(g)
-"""
-Rcode += \
-"""
 SMCcumloglikelihoods <- apply(allLL, 2, cumsum)
 SMCcumlikelihoods <- exp(SMCcumloglikelihoods)
+SMCcumlikelihoods <- SMCcumlikelihoods / exp(trueCumLogLikelihood)
 means <- apply(SMCcumlikelihoods, 1, mean)
 vars <- apply(SMCcumlikelihoods, 1, var)
-normvars <- vars / (exp(trueCumLogLikelihood))^2
 T <- length(observations)
-g <- qplot(x = 1:T, y = normvars, geom = "line")
+g <- qplot(x = 1:T, y = vars, geom = "line")
 g <- g + xlab("time") + ylab("normalised variance")
 print(g)
 upper <- means + sqrt(vars)
 lower <- means - sqrt(vars)
-g <- qplot(x = 1:T, y = means, geom = "line") + scale_y_log() + 
-    geom_line(aes(y = upper), colour = "green") +
-    geom_line(aes(y = lower), colour = "green") +
-    geom_point(aes(y = exp(trueCumLogLikelihood)), colour = "red") +
-    xlab("time") + ylab("likelihood estimates")
+g <- qplot(x = 1:T, y = means, geom = "line")
+g <- g + geom_line(aes(y = upper), colour = "green") +
+    geom_line(aes(y = lower), colour = "green")
+g <- g + xlab("time") + ylab("likelihood estimates")
 print(g)
 """
 Rcode += \
 """
 dev.off()
 """ + "\n"
-plotresultsfile = os.path.join(resultsfolder, "parallelSMC-plot.R")
 print "R code to plot results in %s" % os.path.join(resultsfolder, plotresultsfile)
 f = open(plotresultsfile, "w")
 f.write(Rcode)

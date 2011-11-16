@@ -34,7 +34,7 @@ from src.plotresultsSMC import PlotResultsSMC
 import subprocess
 
 #random.seed(17)
-MODEL = "locallevel"
+MODEL = "simplestmodel"
 
 THISPATH = get_path()
 
@@ -51,8 +51,8 @@ print "Creating data set..."
 xmodule.modelx.generateData(1000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
 
 nbparameters = thetamodule.modeltheta.parameterdimension
-Nx = 10**4
-T = min(50, xmodule.modelx.model_obs.shape[0])
+Nx = 10**5
+T = min(100, xmodule.modelx.model_obs.shape[0])
 model_obs = xmodule.modelx.model_obs[0:T, :]
 model_states = xmodule.modelx.model_states[0:T, :]
 
@@ -69,7 +69,7 @@ p = pstats.Stats('prof')
 p.sort_stats("time").print_stats(3)
 results = singleSIR.getResults()
 results.update({"truestates": xmodule.modelx.model_states[0:T,:]})
-RDatafile = "/tmp/testSMCres" + ".RData"
+RDatafile = "/tmp/SMCfiltering" + ".RData"
 try:
     import rpy2
     from snippets.pickletoRdata import dictionary2RDataWithRPY 
@@ -85,6 +85,7 @@ if hasattr(xmodule.modelx, "RLinearGaussian"):
 if hasattr(xmodule.modelx, "RLinearGaussian"):
     plotter.addKalmanComparison()
 plotter.close()
+print "R code to plot results in %s" % plotter.plotresultsfile
 subprocess.call(["R", "CMD", "BATCH", "--vanilla", plotter.plotresultsfile, "/dev/null"])
 
 

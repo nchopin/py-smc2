@@ -56,8 +56,6 @@ def rprior(size, hyperparameters):
     parameters[4, :] = lamb
     return parameters
 
-
-
 hyperparameters = { \
         "mu_mean": 0, "mu_sd": sqrt(2), \
         "beta_mean": 0, "beta_sd": sqrt(2), \
@@ -78,20 +76,6 @@ modeltheta.setRprior(["priorfunction <- function(x) dnorm(x, sd = %.5f)" % hyper
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["xi_rate"], \
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["omega2_rate"], \
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["lambda_rate"]])
-modeltheta.additionalPlots = """
-if ("predictedlowquantile" %in% ls() && "predictedhiquantile" %in% ls()){
-    g <- qplot(x = 1:T, y = observations, geom = "line")
-    g <- g + geom_line(aes(y = predictedlowquantile), colour = "red")
-    g <- g + geom_line(aes(y = predictedhiquantile), colour = "green")
-    g <- g + xlab("time") + ylab("observations")
-    print(g)
-}
-"""
-
-
-
-
-
 
 
 

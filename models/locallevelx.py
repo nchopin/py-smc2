@@ -22,7 +22,8 @@
 from __future__ import division
 from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
-        array, float32, int32, zeros_like, newaxis
+        array, float32, int32, zeros_like, newaxis, \
+        argsort, var, cumsum, searchsorted
 from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
@@ -79,78 +80,136 @@ modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
 modelx.parameters = array([0.5, 0.1])
+def firststate(xparticles, thetaparticles, t):
+    return xparticles[:, 0, :]
+modelx.setFiltering({"firststate": firststate})
+
 modelx.setRLinearGaussian(\
 """
 dlm <- list("FF" = 1, "GG" = 1, "V" = %.3f, "W" = %.3f,
              "m0" = 0, "C0" = 1)
-KF <- function(observations, somedlm){
-  # the notation comes from the package dlm
-  T <- length(observations)
-  m <- rep(0, T + 1); C <- rep(1, T + 1)
-  a <- rep(0, T); R <- rep(0, T)
-  f <- rep(0, T); Q <- rep(0, T)
-  m[1] <- somedlm$m0; C[1] <- somedlm$C0
-  for (t in 1:T){
-    a[t] <- somedlm$GG * m[t]
-    R[t] <- somedlm$GG * C[t] * somedlm$GG + somedlm$W
-    f[t] <- somedlm$FF * a[t]
-    Q[t] <- somedlm$FF * R[t] * somedlm$FF + somedlm$V
-    m[t+1] <- a[t] + R[t] * somedlm$FF * (1 / Q[t]) * (observations[t] - f[t])
-    C[t+1] <- R[t] - R[t] * somedlm$FF * (1 / Q[t]) * somedlm$FF * R[t]
-  }
-  return(list(observations = observations, NextObsMean = f, NextObsVar = Q,
-              NextStateMean = a, NextStatevar = R,
-              FiltStateMean = m[2:(T+1)], FiltStateVar = C[2:(T+1)]))
-}
-getLoglikelihood <- function(KFresults){
-  IncrLogLike <- log(dnorm(KFresults$observations, 
-            mean = KFresults$NextObsMean, 
-            sd = sqrt(KFresults$NextObsVar)))
-  loglikelihood <- sum(IncrLogLike)
-  return(list(IncrLogLike = IncrLogLike, loglikelihood = loglikelihood))
-}
-KFLL <- function(observations, dlm){
-  KFres <- KF(observations, dlm)
-  return(getLoglikelihood(KFres)$loglikelihood)
-}
-trueLogLikelihood <- KFLL(observations, dlm)
-trueIncrlogLikelihood <- getLoglikelihood(KF(observations, dlm))$IncrLogLike
-trueCumLogLikelihood <- cumsum(trueIncrlogLikelihood)
 """ % (modelx.parameters[1], modelx.parameters[0]))
-Rtruelikelihood = \
+def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros(3)
+    observations = zeros(Nx * Ntheta)
+    weightobs = zeros(Nx * Ntheta)
+    for j in range(Ntheta):
+        observations[(Nx * j):(Nx * (j+1))] = \
+                observationGenerator(xparticles[..., j], thetaparticles[:, j]).reshape(Nx)
+        weightobs[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
+    observations = power(observations, 2)
+    weightobs = weightobs / sum(weightobs)
+    obsmean = average(observations, weights = weightobs)
+    ind = argsort(observations)
+    observations = observations[ind]
+    weightobs = weightobs[ind]
+    cumweightobs = cumsum(weightobs)
+    quantile5 = observations[searchsorted(cumweightobs, 0.05)]
+    quantile95 = observations[searchsorted(cumweightobs, 0.95)]
+    result[0] = obsmean
+    result[1] = quantile5
+    result[2] = quantile95
+    return result
+
+def predictionHiddenstate(xparticles, thetaweights, thetaparticles, t):
+    #thetaweights = thetaweights / sum(thetaweights)
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros(3)
+    predictedstate = zeros(Nx * Ntheta)
+    weight = zeros(Nx * Ntheta)
+    for j in range(Ntheta):
+        predictedstate[(Nx * j):(Nx * (j+1))] = xparticles[..., 0, j]
+        weight[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
+    weight = weight / sum(weight)
+    xmean = average(predictedstate, weights = weight)
+    ind = argsort(predictedstate)
+    predictedstate = predictedstate[ind]
+    weight = weight[ind]
+    cumweight = cumsum(weight)
+    quantile5 = predictedstate[searchsorted(cumweight, 0.05)]
+    quantile95 = predictedstate[searchsorted(cumweight, 0.95)]
+    result[0] = xmean
+    result[1] = quantile5
+    result[2] = quantile95
+    return result
+def predictionObservations(xparticles, thetaweights, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros(3)
+    observations = zeros(Nx * Ntheta)
+    weightobs = zeros(Nx * Ntheta)
+    for j in range(Ntheta):
+        observations[(Nx * j):(Nx * (j+1))] = \
+                observationGenerator(xparticles[..., j], thetaparticles[:, j]).reshape(Nx)
+        weightobs[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
+    weightobs = weightobs / sum(weightobs)
+    obsmean = average(observations, weights = weightobs)
+    ind = argsort(observations)
+    observations = observations[ind]
+    weightobs = weightobs[ind]
+    cumweightobs = cumsum(weightobs)
+    quantile5 = observations[searchsorted(cumweightobs, 0.05)]
+    quantile95 = observations[searchsorted(cumweightobs, 0.95)]
+    result[0] = obsmean
+    result[1] = quantile5
+    result[2] = quantile95
+    return result
+
+modelx.setPrediction([{"function": predictionSquaredObservations, "dimension": 3, "name": "squaredobs"}, \
+        {"function": predictionHiddenstate, "dimension": 3, "name": "hiddenstate"}, \
+        {"function": predictionObservations, "dimension": 3, "name": "obs"}])
+
+
+Rmarginals = \
 """
 temptrueloglikelihood <- function(theta){
     somedlm <- dlm
-    somedlm["GG"] <- theta
+    somedlm["V"] <- theta[2]
+    somedlm["W"] <- theta[1]
     return(KFLL(observations, somedlm))
 }
-trueloglikelihood <- function(theta){
-    return(sapply(X= theta, FUN= temptrueloglikelihood))
+trueloglikelihood <- function(theta1, theta2){
+  theta <- cbind(theta1, theta2)
+  return(apply(X=theta, MARGIN=1, FUN=temptrueloglikelihood))
 }
-trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
-normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
-truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
+priorfunction <- function(x){
+    shape <- 1.00000 
+    scale <- 1.00000
+    return(scale**shape / gamma(shape) * x**(- shape - 1) * exp(-scale / x))
+}
+truelogposterior <- function(theta1, theta2){
+  prior <- log(priorfunction(theta1)) + log(priorfunction(theta2))
+  theta <- cbind(theta1, theta2)
+  return(prior + apply(X=theta, MARGIN=1, FUN=temptrueloglikelihood))
+}
+range1 <- range(thetahistory[1,1,])
+range2 <- range(thetahistory[1,2,])
+x = seq(from = range1[1], to = range1[2], length.out = 6)
+y = seq(from = range2[1], to = range2[2], length.out = 6)
+z = outer(X=x,Y=y,FUN=truelogposterior)
+maxlogposterior <- max(z)
+tmpunnormmarginal1 <- function(theta1){
+  temp <- function(theta2){
+    exp(truelogposterior(theta1, theta2) - maxlogposterior)
+  }
+  integrate(temp, lower = range2[1], upper = range2[2])$value
+}
+unnormmarginal1 <- function(theta1) sapply(X=theta1, FUN=tmpunnormmarginal1)
+normconstant1 <- integrate(unnormmarginal1, lower = range1[1], upper = range1[2])$value
+normmarginal1 <- function(theta1) unnormmarginal1(theta1) / normconstant1
+tmpunnormmarginal2 <- function(theta2){
+  temp <- function(theta1){
+    exp(truelogposterior(theta1, theta2) - maxlogposterior)
+  }
+  integrate(temp, lower = range1[1], upper = range1[2])$value
+}
+unnormmarginal2 <- function(theta2) sapply(X=theta2, FUN=tmpunnormmarginal2)
+normconstant2 <- integrate(unnormmarginal2, lower = range2[1], upper = range2[2])$value
+normmarginal2 <- function(theta2) unnormmarginal2(theta2) / normconstant2
+marginals <- c(normmarginal1, normmarginal2)
 """
-modelx.setRlikelihood([Rtruelikelihood, Rtruelikelihood])
-
-
-#def predictionlowquantile(xparticles, thetaparticles, t):
-#    Nx = xparticles.shape[0]
-#    Ntheta = xparticles.shape[2]
-#    result = zeros((Nx, Ntheta))
-#    lowquantile = -1.95996398454
-#    for k in range(Nx):
-#        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * lowquantile
-#    return result
-#def predictionhiquantile(xparticles, thetaparticles, t):
-#    Nx = xparticles.shape[0]
-#    Ntheta = xparticles.shape[2]
-#    result = zeros((Nx, Ntheta))
-#    hiquantile = +1.95996398454
-#    for k in range(Nx):
-#        result[k, :] = xparticles[k, 0, :] + sqrt(thetaparticles[1, :]) * hiquantile
-#    return result
-#modelx.predictionfunctionals = {"lowquantile": predictionlowquantile, "hiquantile": predictionhiquantile}
-
-
+modelx.setRmarginals(Rmarginals)
 

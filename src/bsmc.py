@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-import os, os.path
+import os, os.path, time
 from numpy import random, power, sqrt, exp, zeros, zeros_like,\
         ones, mean, average, prod, log, sum, repeat, newaxis, \
         array, float32, int32, cov, load, isinf, isnan, zeros_like, \
@@ -44,10 +44,12 @@ class BSMC:
         self.modelx = model["modelx"]
         self.modeltheta = model["modeltheta"]
         self.observations = model["observations"]
+        self.truestates = model["truestates"]
         # parameters...
         self.N = algorithmparameters["N"]
         self.smooth = algorithmparameters["smooth"]
         self.ESSthreshold = algorithmparameters["ESSthreshold"]
+        self.AP = algorithmparameters
         # useful quantities that we want to access easily 
         self.statedimension = self.modelx.xdimension
         self.obsdimension = self.modelx.ydimension
@@ -64,16 +66,19 @@ class BSMC:
         self.shrink = sqrt(1 - self.hsq)
         self.ESS = zeros(self.T)
         self.resamplingindices = []
+        self.evidences = zeros(self.T)
         # number of already past saving times
         self.alreadystored = 0
         self.thetahistory = zeros((len(self.savingtimes), self.modeltheta.parameterdimension, self.N))
         self.weighthistory = zeros((len(self.savingtimes), self.N))
         # prediction
-        self.predictionEnable = algorithmparameters["prediction"]
-        self.predicted = {}
-        if self.predictionEnable:
-            for functionalnames in self.modelx.predictionfunctionals.keys():
-                self.predicted[functionalnames] = zeros(self.T)
+        if self.AP["prediction"]:
+            if hasattr(self.modelx, "predictionlist"):
+                self.predicted = []
+                for d in self.modelx.predictionlist:
+                    self.predicted.append(zeros((self.T, d["dimension"])))
+        # computing time for each iteration
+        self.computingtimes = zeros(self.T)
         print "------------------"
         print "launching Liu and West's SMC, with algorithm parameters:"
         for key, element in algorithmparameters.items():
@@ -96,17 +101,8 @@ class BSMC:
         for each theta_i, simulate one x-particle from the initial distribution
         p(x_0 | theta_i)
         """
-        if self.modeltheta.hasInitDistribution:
-            print "init distribution is specified, using it..."
-            self.thetaparticles[...] = self.modeltheta.rinit(self.N)
-            self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
-            for i in range(self.N):
-                self.logxweights[i] = self.modeltheta.priorlogdensity(self.transformedthetaparticles[:, i]) - \
-                        self.modeltheta.dinit(self.transformedthetaparticles[:, i])
-        else:
-            print "no init distribution is specified, using prior distribution instead..."
-            self.thetaparticles[...] = self.modeltheta.priorgenerator(self.N)
-            self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
+        self.thetaparticles[...] = self.modeltheta.priorgenerator(self.N)
+        self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
         for i in range(self.N):
             self.xparticles[:, i] = self.modelx.firstStateGenerator(self.thetaparticles[:, i], size = 1)
     def next_steps(self):
@@ -116,10 +112,11 @@ class BSMC:
         for t in range(0, self.T):
             #print "time %i" % t
             progressbar(t / (self.T - 1))
+            last_tic = time.time()
             TandWresults = self.modelx.transitionAndWeight(self.xparticles[newaxis, ...], \
                     self.observations[t], self.thetaparticles, t + 1)
             self.xparticles[...] = TandWresults["states"][0, ...]
-            if self.predictionEnable:
+            if self.AP["prediction"]:
                 self.prediction(t)
             self.logxweights[:] = TandWresults["weights"][0, :]
             self.logxweights[isnan(self.logxweights)] = -(10**150)
@@ -127,6 +124,7 @@ class BSMC:
             self.constants[t] = numpymax(self.logxweights)
             self.logxweights[:] -= self.constants[t]
             self.xweights[:] = exp(self.logxweights)
+            self.evidences[t] = mean(self.constants[t] * self.xweights)
             covmean = self.computeCovarianceAndMean()
             m = (self.shrink) * self.transformedthetaparticles + \
                 (1 - self.shrink) * transpose(covmean["mean"][newaxis])
@@ -135,9 +133,12 @@ class BSMC:
             self.transformedthetaparticles[...] = m + noise
             self.thetaparticles[...] = self.modeltheta.untransform(self.transformedthetaparticles)
             self.ESS[t] = ESSfunction(self.xweights[:])
-            if self.ESS[t] < (self.ESSthreshold * self.N):
-                self.resample()
-                self.resamplingindices.append(t)
+            #if self.ESS[t] < (self.ESSthreshold * self.N):
+            self.resample()
+            self.resamplingindices.append(t)
+            new_tic = time.time()
+            self.computingtimes[t] = new_tic - last_tic
+            last_tic = new_tic
             if t in self.savingtimes or t == self.T - 1:
                 print "\nsaving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
@@ -150,9 +151,11 @@ class BSMC:
             10**(-4)/self.modeltheta.parameterdimension)
         return res
     def prediction(self, t):
-        for key in self.predicted.keys():
-            tempvector = self.modelx.predictionfunctionals[key](self.xparticles[newaxis, ...], self.thetaparticles, t).reshape(self.N)
-            self.predicted[key][t] = average(tempvector, weights = self.xweights)
+        w = ones(self.N)
+        if hasattr(self.modelx, "predictionlist"):
+            for index, d in enumerate(self.modelx.predictionlist):
+                self.predicted[index][t, :] = d["function"](self.xparticles[newaxis,...], \
+                    w, self.thetaparticles, t)
     def getResults(self):
         resultsDict = {"trueparameters" : self.modelx.parameters,\
                 "N" : self.N, "T" : self.T, "nbparameters" : self.modeltheta.parameterdimension, \
@@ -160,8 +163,14 @@ class BSMC:
                 "savingtimes" : self.savingtimes, \
                 "thetahistory": self.thetahistory, \
                 "weighthistory": self.weighthistory, \
-                "ESS": self.ESS, "predicted": self.predicted, \
-                "resamplingindices": self.resamplingindices}
+                "ESS": self.ESS, "evidences": self.evidences, \
+                "resamplingindices": self.resamplingindices, \
+                "computingtimes": self.computingtimes, "truestates": self.truestates}
+        if self.AP["prediction"]:
+            #resultsDict.update({"predictedObs": self.predictedObs})
+            if hasattr(self, "predicted"):
+                for index, d in enumerate(self.modelx.predictionlist):
+                    resultsDict.update({"predicted%s" % d["name"]: self.predicted[index]})
         return resultsDict
             
 

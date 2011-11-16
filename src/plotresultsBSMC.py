@@ -33,8 +33,10 @@ class PlotResultsBSMC(PlotResults):
         self.parametersHaveBeenLoaded = False
     def everything(self):
         self.ESS()
+        self.addEvidence()
         self.allParameters()
         self.addObservations()
+        self.addPredictedObs()
         self.close()
     def singleparameter(self, parameterindex):
         self.histogramparameter(parameterindex)
@@ -60,17 +62,17 @@ g <- ggplot(thetasDF, aes(thetasDF[[i]], weight = w))
 g <- g + geom_histogram(aes(y=..density..), colour = "black", fill = "white")
 g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
-        if self.modeltheta.truevaluesAvailable:
+        if hasattr(self.modeltheta, "truevalues"):
             self.Rcode += \
 """
 g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
 """
-        if self.modeltheta.RpriorAvailable:
+        if hasattr(self.modeltheta, "Rprior"):
             self.Rcode += \
 """
 %s
 g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size = 1)
-""" % self.modeltheta.Rfunctionlist[parameterindex]
+""" % self.modeltheta.Rprior[parameterindex]
         self.Rcode += \
 """
 print(g)
@@ -82,6 +84,14 @@ N <- dim(thetahistory)[3]
 ESSdataframe <- as.data.frame(cbind(1:length(ESS), ESS))
 g <- ggplot(data = ESSdataframe, aes(x = V1, y= ESS))
 g <- g + geom_line() + xlab("iterations") + ylab("ESS") + ylim(0, N)
+print(g)
+"""
+    def addEvidence(self):
+        self.Rcode += \
+"""
+evidencedataframe <- as.data.frame(cbind(1:length(evidences), evidences))
+g <- ggplot(data = evidencedataframe, aes(x = V1, y= evidences))
+g <- g + geom_line() + xlab("iterations") + ylab("evidence")
 print(g)
 """
 
