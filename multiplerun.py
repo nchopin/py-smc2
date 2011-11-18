@@ -6,7 +6,7 @@ from __future__ import division
 import subprocess
 
 nruns = 10
-ncores = 2
+ncores = 3
 for i in range(nruns):
     processes = []
     for j in range(ncores):
@@ -15,5 +15,5 @@ for i in range(nruns):
         except:
             pass
     for j in range(ncores):
-        processes[j].wait()
+         processes[j].wait()
 

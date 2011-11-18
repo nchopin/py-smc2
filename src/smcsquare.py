@@ -249,16 +249,10 @@ class SMCsquare:
                 progressbar(t / (self.T - 1), text = " ESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx))
             else:
                 progressbar(t / (self.T - 1), text = " ESS: %.3f" % self.ESS[t])
-            #print "\n", self.computeCovarianceAndMean(t)
             if self.ESS[t] < (self.AP["ESSthreshold"] * self.Ntheta):
-                #print "\n min, max before resampling"
-                #print numpymin(self.transformedthetaparticles)
-                #print numpymax(self.transformedthetaparticles)
                 progressbar(t / (self.T - 1), text =\
                         " ESS: %.3f - resample move step at iteration = %i" % (self.ESS[t], t))
                 covdict = self.computeCovarianceAndMean(t)
-                #print "\ncovdict:"
-                #print covdict
                 if self.AP["proposalkernel"] == "randomwalk":
                     self.proposalcovmatrix = self.AP["rwvariance"] * covdict["cov"]
                     self.proposalmean = None

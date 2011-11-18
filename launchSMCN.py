@@ -48,8 +48,12 @@ f, filename, description = imp.find_module(thetamodulename)
 thetamodule = imp.load_module("thetamodule", f, filename, description)
 
 print "Creating data set..."
-xmodule.modelx.generateData(5000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
-
+#xmodule.modelx.generateData(5000, xmodule.modelx.parameters, savefilename = "/tmp/txt.txt")
+syntheticdatasetpath = os.path.join(THISPATH, "data/%s-syntheticdata.R" % MODEL)
+if os.path.isfile(syntheticdatasetpath):
+    xmodule.modelx.loadData(syntheticdatasetpath)
+xmodule.modelx.model_states = xmodule.modelx.model_states[:, newaxis]
+print xmodule.modelx.model_obs.shape
 nbparameters = thetamodule.modeltheta.parameterdimension
 Nx = 100
 Ntheta = 1000
@@ -83,9 +87,9 @@ basename = basename + "T%iNx%iNtheta%i" % (T, Nx, Ntheta)
 tryname = basename
 RDatafile = os.path.join(resultsfolder, basename)
 counter = 0
-while os.path.isfile(os.path.join(resultsfolder, tryname + ".RData")):
-    counter += 1
-    tryname = basename + "(%i)" % counter
+#while os.path.isfile(os.path.join(resultsfolder, tryname + ".RData")):
+#    counter += 1
+#    tryname = basename + "(%i)" % counter
 print "results in %s" % resultsfolder
 RDatafile = os.path.join(resultsfolder, tryname + ".RData")
 pdffile = os.path.basename(RDatafile.replace(".RData", ".pdf"))

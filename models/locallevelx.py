@@ -114,7 +114,6 @@ def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
     return result
 
 def predictionHiddenstate(xparticles, thetaweights, thetaparticles, t):
-    #thetaweights = thetaweights / sum(thetaweights)
     Nx = xparticles.shape[0]
     Ntheta = xparticles.shape[2]
     result = zeros(3)

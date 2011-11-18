@@ -79,16 +79,6 @@ g <- g + geom_line() + xlab("iterations (square root scale)") + ylab("ESS (log)"
 g <- g + scale_x_sqrt() + scale_y_log()
 print(g)
 """
-    def addEvidence(self):
-        if not("No evidence" in self.plottingInstructions):
-            self.Rcode += \
-"""
-evidencedataframe <- as.data.frame(cbind(1:length(evidences), evidences))
-g <- ggplot(data = evidencedataframe, aes(x = V1, y= evidences))
-g <- g + geom_line() + xlab("iterations") + ylab("evidence")
-print(g)
-"""
-
     def histogramparameter(self, parameterindex):
         if not(self.parametersHaveBeenLoaded):
             self.loadparameters()

@@ -23,66 +23,90 @@
 # like gcc (mac os users should install xcode)
 # Optional but useful: R, ggplot2 (for the plots), rpy2
 
-# Once you've chosen the paramerers, launch the script "launch.py" by typing
-# :~$ python launch.py
-
-RANDOMSEED = False
-##
-MODEL = "locallevel"
-T = 100
-DATASET = "synthetic"
-METHOD = "SMC2"
-##
-GENERATERFILE = True
-PLOT = True
-##
-NTHETA = 500
-NX = 250
-DYNAMICNX = True
-PROPOSALKERNEL = "independent"
-ESSTHRESHOLD = 0.5
-##
-DYNAMICNXTHRESHOLD = 0.2
-NXLIMIT = 5000
-RWVARIANCE = 0.1
-NBMOVES = 1
-##
-NSOPF = 100000
-##
-NBSMC = 100000
-BSMCsmooth = 0.1
-##
-NPMCMC = 200
-TPMCMC = 1000
-PMCMCBURNIN = TPMCMC / 10
-##
-#SAVINGTIMES = [250]
-SAVINGTIMES = []
-SMOOOTHING = False
-FILTERING = True
-PREDICTION = True
-SMOOTHINGTIMES = []
-STORESMOOTHINGTIME = 0
-COMPAREKALMAN = False
-##
-PROFILING = True
-RESULTSFILENAME = "temp"
-REPLACEFILE = True
-USESUBFOLDERS = False 
-RESULTSFILETYPE = ["RData"]
-
-##################################################################
-########################## EXPLANATIONS ##########################
-##################################################################
 # If RANDOMSEED is True, a new seed is used at each run, otherwise it's fixed (for debugging purposes)
+RANDOMSEED = True
+
+##########################
+####  USER PARAMETERS ####
+##########################
+
+##########################
+### Model and dataset:
+MODEL = "simplestmodel"
+T = 1000
+DATASET = "synthetic"
+METHOD = "BSMC"
+
 ##########################
 # METHOD could be:
 # SMC2: SOPF, BSMC, adPMCMC
 ##########################
+
+
+##########################
+### Plot options
+# Generate R file to plot results (does not require R)
+GENERATERFILE = True
+## Generate pdf figures using the R file (requires R and package "ggplot2")
+PLOT = False
+
+##########################
+### SMC2 algorithm parameters
+# NTHETA: number of theta-particles
+# NX: number of x-particles 
+# DYNAMICNX: automatic increase of NX:
+# PROPOSALKERNEL can be either "randomwalk" or "independent".
+# ESSTHRESHOLD: resample-move steps are triggered when the ESS goes below ESSTHRESHOLD.
+###
+NTHETA = 1000
+NX = 250
+DYNAMICNX = True
+PROPOSALKERNEL = "independent"
+ESSTHRESHOLD = 0.5
+##########################
+### Advancer parameters for SMC2
+## If DYNAMICNX, acceptance rate limit:
+DYNAMICNXTHRESHOLD = 0.2
+## If DYNAMICNX, maximum number of x-particles allowed:
+NXLIMIT = 5000
+## If PROPOSALKERNEL == "randomwalk",
+## the random walk has variance RWVARIANCE * Cov(theta-particles).
+RWVARIANCE = 0.1
+# Number of moves to perform at each resample-move step:
+NBMOVES = 1
+
+### 
+##########################
+### SOPF algorithm parameters
+# If you want to try the SOPF algorithm to compare the results,
+# specify the number of particles here:
+NSOPF = 100000
+
+##########################
+### BSMC algorithm parameters
+# If you want to try the BSMC algorithm to compare the results,
+# specify the number of particles here:
+NBSMC = 250000
+# specify the "h" factor used in the kernel density approximation
+# of the distribution of the parameters given the data
+# should be "slowly decreasing with N", N being the number of particles
+BSMCsmooth = 0.1
+
+### 
+##########################
+### adaptive PMCMC algorithm parameters
+# If you want to try the adaptive PMCMC algorithm to compare the results:
+# Number of x-particles:
+NPMCMC = 200
+# Number of iterations:
+TPMCMC = 1000
+PMCMCBURNIN = TPMCMC / 10
+
+### 
+##########################
 ### Models and datasets options
 # MODEL is a string, there has to be files named MODELx.py and MODELtheta.py
 # in the models/ subfolder. Provided models are: 
-# - simplestmodel: most basic linear gaussian SSM
 # - locallevel: basic linear gaussian SSM
 # - thetalogistic: population model with non linear hidden process (Polansky's parameterization)
 # - periodic: highly non linear model from Gordon Salmond and Smith
@@ -100,59 +124,43 @@ RESULTSFILETYPE = ["RData"]
 # - "anisus" (18 data points), or "nutria" (120 data points). You can test these datasets
 # with the thetalogistic model.
 # - "athletics-best-two": (for the athletics records model), taken from http://www.alltime-athletics.com/
-##########################
-### SMC2 algorithm parameters
-# NTHETA: number of theta-particles
-# NX: number of x-particles 
-# DYNAMICNX: automatic increase of NX:
-# PROPOSALKERNEL can be either "randomwalk" or "independent".
-# ESSTHRESHOLD: resample-move steps are triggered when the ESS goes below ESSTHRESHOLD.
-##########################
-### Advanced parameters for SMC2
-## DYNAMICNXTHRESHOLD: If DYNAMICNX, acceptance rate limit
-## NXLIMIT: If DYNAMICNX, maximum number of x-particles allowed
-## If PROPOSALKERNEL == "randomwalk",
-## the random walk has variance RWVARIANCE * Cov(theta-particles).
-# NBMOVES: Number of moves to perform at each resample-move step
-##########################
-### SOPF algorithm parameters
-# NSOPF: If you want to try the SOPF algorithm to compare the results,
-# specify the number of particles here
-##########################
-### BSMC algorithm parameters
-# NBSMC: If you want to try the BSMC algorithm to compare the results,
-# specify the number of particles here
-# BSMCsmooth: specify the "h" factor used in the kernel density approximation
-# of the distribution of the parameters given the data
-# should be "slowly decreasing with N", N being the number of particles
-##########################
-### adaptive PMCMC algorithm parameters
-# If you want to try the adaptive PMCMC algorithm to compare the results:
-# NPMCMC: Number of x-particles
-# TPMCMC: Number of iterations
-# PMCMCBURNIN: burn-in (for the plots only)
-##########################
-### Plot options
-# GENERATERFILE: Generate R file to plot results (does not require R)
-## PLOT: Generate pdf figures using the R file (requires R and package "ggplot2")
+
+
+### 
 ##########################
 ### Results options
+
 # Specify time at which the theta-particles should be saved
 # (useful when doing sequential analysis).
 # The final time T = number of observations is automatically saved,
 # no need to add it to the list.
-### PROFILING: Should the program report profiling? (Slows the program a little bit).
-# RESULTSFILENAME: Specify results file name (without extensions),
+#SAVINGTIMES = [250]
+SAVINGTIMES = []
+SMOOOTHING = False
+FILTERING = False 
+PREDICTION = False
+SMOOTHINGTIMES = []
+STORESMOOTHINGTIME = 0
+COMPAREKALMAN = False
+
+### Should the program report profiling? (Slows the program a little bit).
+PROFILING = False 
+
+# Specify results file name (without extensions),
 # leave empty if an automatic name is preferred, based on the algorithm parameters.
-# REPLACEFILE: Replace already existing files; if False,
+RESULTSFILENAME = ""
+# Replace already existing files; if False,
 # a counter will be added to the result file name, so that no existing files are erased.
-# USESUBFOLDERS: Use subfolders for each model and each dataset to organize the results.
+REPLACEFILE = False
+# Use subfolders for each model and each dataset to organize the results.
 # If False, use long names and store the results at the root of the results/ folder.
+USESUBFOLDERS = True 
 # RESULTSFILETYPE could include "RData" and "cpickle".
 # This list is used to save the results either in RData format 
 # or in cPickle format or in both formats. RData is required to use the graph programs
 # of subfolder rgraphs/.
 #RESULTSFILETYPE = ["RData", "cpickle"]
+RESULTSFILETYPE = ["RData"]
 ##########################
 
 

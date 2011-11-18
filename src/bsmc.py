@@ -48,7 +48,7 @@ class BSMC:
         # parameters...
         self.N = algorithmparameters["N"]
         self.smooth = algorithmparameters["smooth"]
-        self.ESSthreshold = algorithmparameters["ESSthreshold"]
+        #self.ESSthreshold = algorithmparameters["ESSthreshold"]
         self.AP = algorithmparameters
         # useful quantities that we want to access easily 
         self.statedimension = self.modelx.xdimension
@@ -64,7 +64,7 @@ class BSMC:
         self.savingtimes.append(self.T)
         self.hsq = power(self.smooth, 2)
         self.shrink = sqrt(1 - self.hsq)
-        self.ESS = zeros(self.T)
+        #self.ESS = zeros(self.T)
         self.resamplingindices = []
         self.evidences = zeros(self.T)
         # number of already past saving times
@@ -124,7 +124,7 @@ class BSMC:
             self.constants[t] = numpymax(self.logxweights)
             self.logxweights[:] -= self.constants[t]
             self.xweights[:] = exp(self.logxweights)
-            self.evidences[t] = mean(self.constants[t] * self.xweights)
+            self.evidences[t] = exp(self.constants[t]) * mean(self.xweights)
             covmean = self.computeCovarianceAndMean()
             m = (self.shrink) * self.transformedthetaparticles + \
                 (1 - self.shrink) * transpose(covmean["mean"][newaxis])
@@ -132,7 +132,7 @@ class BSMC:
                 self.hsq * covmean["cov"], size = self.N))
             self.transformedthetaparticles[...] = m + noise
             self.thetaparticles[...] = self.modeltheta.untransform(self.transformedthetaparticles)
-            self.ESS[t] = ESSfunction(self.xweights[:])
+            #self.ESS[t] = ESSfunction(self.xweights[:])
             #if self.ESS[t] < (self.ESSthreshold * self.N):
             self.resample()
             self.resamplingindices.append(t)
@@ -163,7 +163,7 @@ class BSMC:
                 "savingtimes" : self.savingtimes, \
                 "thetahistory": self.thetahistory, \
                 "weighthistory": self.weighthistory, \
-                "ESS": self.ESS, "evidences": self.evidences, \
+                "evidences": self.evidences, \
                 "resamplingindices": self.resamplingindices, \
                 "computingtimes": self.computingtimes, "truestates": self.truestates}
         if self.AP["prediction"]:

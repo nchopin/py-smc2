@@ -32,9 +32,8 @@ class PlotResultsBSMC(PlotResults):
         self.Rcode += """pdf(file = pdffile, useDingbats = FALSE, title = "%s results")\n""" % self.method
         self.parametersHaveBeenLoaded = False
     def everything(self):
-        self.ESS()
         self.addEvidence()
-        self.allParameters()
+        #self.allParameters()
         self.addObservations()
         self.addPredictedObs()
         self.close()
@@ -77,22 +76,4 @@ g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size =
 """
 print(g)
 """
-    def ESS(self):
-        self.Rcode += \
-"""
-N <- dim(thetahistory)[3]
-ESSdataframe <- as.data.frame(cbind(1:length(ESS), ESS))
-g <- ggplot(data = ESSdataframe, aes(x = V1, y= ESS))
-g <- g + geom_line() + xlab("iterations") + ylab("ESS") + ylim(0, N)
-print(g)
-"""
-    def addEvidence(self):
-        self.Rcode += \
-"""
-evidencedataframe <- as.data.frame(cbind(1:length(evidences), evidences))
-g <- ggplot(data = evidencedataframe, aes(x = V1, y= evidences))
-g <- g + geom_line() + xlab("iterations") + ylab("evidence")
-print(g)
-"""
-
 

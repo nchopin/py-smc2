@@ -83,19 +83,47 @@ print(g)
             self.Rcode += \
 """
 if (exists("predictedobs")){
-    g <- qplot(x = 1:T, y = observations, geom = "line", colour = "observations")
-    g <- g + geom_line(aes(y = predictedobs[,1], colour = "SMC2 predicted mean"))
-    g <- g + geom_line(aes(y = predictedobs[,2], colour = "SMC2 90 pct confidence"))
-    g <- g + geom_line(aes(y = predictedobs[,3], colour = "SMC2 90 pct confidence"))
+    if (T > 25){
+        start <- 10
+    } else {
+        start <- 1
+    }
+    g <- qplot(x = start:T, y = observations[start:T], geom = "line", colour = "observations")
+    g <- g + geom_line(aes(y = predictedobs[start:T,1], colour = "predicted mean"))
+    g <- g + geom_line(aes(y = predictedobs[start:T,2], colour = "90 pct confidence"))
+    g <- g + geom_line(aes(y = predictedobs[start:T,3], colour = "90 pct confidence"))
     g <- g + scale_colour_discrete(name = "")
     if (exists("KF")){
         KFresults <- KF(observations, dlm)
-        g <- g + geom_line(aes(y = KFresults$NextObsMean, colour = "KF predicted mean"))
+        g <- g + geom_line(aes(y = KFresults$NextObsMean[start:T], colour = "KF predicted mean"))
     }
     g <- g + xlab("time") + ylab("observations")
     print(g)
 }
+if (exists("predictedsquaredobs")){
+    if (T > 25){
+        start <- 10
+    } else {
+        start <- 1
+    }
+    g <- qplot(x = start:T, y = observations[start:T]**2, geom = "line", colour = "squared observations")
+    g <- g + geom_line(aes(y = predictedsquaredobs[start:T,1], colour = "predicted mean"))
+    g <- g + geom_line(aes(y = predictedsquaredobs[start:T,2], colour = "90 pct confidence"))
+    g <- g + geom_line(aes(y = predictedsquaredobs[start:T,3], colour = "90 pct confidence"))
+    g <- g + scale_colour_discrete(name = "")
+    g <- g + xlab("time") + ylab("squared observations")
+    print(g)
+}
 """
+    def addEvidence(self):
+        self.Rcode += \
+"""
+evidencedataframe <- as.data.frame(cbind(1:length(evidences), evidences))
+g <- ggplot(data = evidencedataframe, aes(x = V1, y= evidences))
+g <- g + geom_line() + xlab("iterations") + ylab("evidence")
+print(g)
+"""
+
     def close(self):
         self.Rcode += self.additionalPlots
         self.Rcode += \

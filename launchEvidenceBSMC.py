@@ -31,7 +31,7 @@ from src.adpmcmc import AdaptivePMCMC
 from snippets.localfolder import get_path
 import userfile as userfile
 
-userfilefile = open("userfile.py", "r")
+userfilefile = open("userfileEvidenceBSMC.py", "r")
 userfilecontent = userfilefile.read()
 userfilefile.close()
 
