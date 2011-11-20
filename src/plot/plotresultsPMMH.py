@@ -21,43 +21,43 @@
 
 from __future__ import division
 import os, os.path
-from src.plotresults import PlotResults
+from src.plot.plotresults import PlotResults
 
 
-class PlotResultsBSMC(PlotResults):
-    def __init__(self, resultsfolder, RDatafile):
-        self.method = "BSMC"
-        self.color = "orange"
+class PlotResultsPMMH(PlotResults):
+    def __init__(self, resultsfolder, RDatafile, burnin):
+        self.method = "adPMCMC"
+        self.color = "red"
         PlotResults.__init__(self, resultsfolder, RDatafile)
         self.Rcode += """pdf(file = pdffile, useDingbats = FALSE, title = "%s results")\n""" % self.method
         self.parametersHaveBeenLoaded = False
+        self.burnin = burnin
+
     def everything(self):
-        self.addEvidence()
-        #self.allParameters()
+        self.allParameters()
         self.addObservations()
-        self.addPredictedObs()
         self.close()
+
     def singleparameter(self, parameterindex):
         self.histogramparameter(parameterindex)
+        self.traceplot(parameterindex)
     def loadparameters(self):
         self.Rcode += \
 """
-indexhistory <- length(savingtimes)
-t <- savingtimes[indexhistory]
-w <- weighthistory[indexhistory,]
-w <- w / sum(w)
-thetas <- as.data.frame(t(thetahistory[indexhistory,,]))
-thetasDF <- cbind(thetas, w)
-names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""), "w")
-"""
+thetasDF <- data.frame(t(chain))
+names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""))
+thetasDF$iterations <- 1:(dim(thetasDF)[1])
+thetasDF <- subset(thetasDF, iterations > %(burnin)i)
+""" % {"burnin": self.burnin}
         self.parametersHaveBeenLoaded = True
+
     def histogramparameter(self, parameterindex):
         if not(self.parametersHaveBeenLoaded):
             self.loadparameters()
         self.Rcode += \
 """
 i <- %(parameterindex)i
-g <- ggplot(thetasDF, aes(thetasDF[[i]], weight = w))
+g <- ggplot(thetasDF, aes(thetasDF[[i]]))
 g <- g + geom_histogram(aes(y=..density..), colour = "black", fill = "white")
 g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
@@ -76,4 +76,15 @@ g <- g + stat_function(fun = priorfunction, colour = "red", linetype = 1, size =
 """
 print(g)
 """
+
+    def traceplot(self, parameterindex):
+        if not(self.parametersHaveBeenLoaded):
+            self.loadparameters()
+        self.Rcode += \
+"""
+i <- %(parameterindex)i + 1
+g <- ggplot(thetasDF, aes(x = iterations, y = thetasDF[[i]]))
+g <- g + geom_line() + ylab(%(parametername)s)
+print(g)
+""" % {"parameterindex": parameterindex, "parametername": self.parameternames[parameterindex], "color": self.color}
 

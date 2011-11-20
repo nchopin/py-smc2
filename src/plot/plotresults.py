@@ -57,12 +57,8 @@ truevalues <- c(%s)
         if len(self.modeltheta.plottingInstructions) > 0:
             self.plottingInstructions = self.modeltheta.plottingInstructions
         self.additionalPlots = self.modeltheta.additionalPlots
-    def setModelX(self, modelx, compareKalman):
+    def setModelX(self, modelx):
         self.modelx = modelx
-        if hasattr(self.modelx, "RLinearGaussian"):
-            self.Rcode += "\n" + self.modelx.RLinearGaussian
-            if hasattr(self.modelx, "Rmarginals") and compareKalman:
-                self.Rcode += "\n" + self.modelx.Rmarginals
     def setParameters(self, names):
         self.parameterdimension = len(names)
         self.parameternames = names
@@ -82,36 +78,35 @@ print(g)
     def addPredictedObs(self):
             self.Rcode += \
 """
-if (exists("predictedobs")){
-    if (T > 25){
-        start <- 10
-    } else {
-        start <- 1
-    }
-    g <- qplot(x = start:T, y = observations[start:T], geom = "line", colour = "observations")
-    g <- g + geom_line(aes(y = predictedobs[start:T,1], colour = "predicted mean"))
-    g <- g + geom_line(aes(y = predictedobs[start:T,2], colour = "90 pct confidence"))
-    g <- g + geom_line(aes(y = predictedobs[start:T,3], colour = "90 pct confidence"))
-    g <- g + scale_colour_discrete(name = "")
-    if (exists("KF")){
-        KFresults <- KF(observations, dlm)
-        g <- g + geom_line(aes(y = KFresults$NextObsMean[start:T], colour = "KF predicted mean"))
-    }
-    g <- g + xlab("time") + ylab("observations")
-    print(g)
+if (exists("truestates") && is.null(dim(truestates))){
+    truestates <- as.matrix(truestates, ncol = 1)
 }
-if (exists("predictedsquaredobs")){
-    if (T > 25){
-        start <- 10
+predictedquantities <- grep(patter="predicted", x = ls(), value = TRUE)
+if (T > 25){
+    start <- 10
+} else {
+    start <- 1
+}
+for (name in predictedquantities){
+    ystr <- paste(name, "[start:T,1]", sep = "")
+    yqt1 <- paste(name, "[start:T,2]", sep = "")
+    yqt2 <- paste(name, "[start:T,3]", sep = "")
+    g <- qplot(x = start:T, geom = "blank")
+    g <- g + geom_line(aes_string(y = ystr, colour = paste("'", name, "'", sep = "")))
+    g <- g + geom_line(aes_string(y = yqt1, colour = paste("'", name, "quantile'", sep = "")))
+    g <- g + geom_line(aes_string(y = yqt2, colour = paste("'", name, "quantile'", sep = "")))
+    if (name == "predictedstate1" && exists("truestates")){
+            g <- g + geom_line(aes(y = truestates[start:T,1], colour = "True states"))
     } else {
-        start <- 1
+        if (name == "predictedstate2" && exists("truestates")){
+            g <- g + geom_line(aes(y = truestates[start:T,2], colour = "True states"))
+        } else {
+            if (name == "predictedobservations"){
+                g <- g + geom_line(aes(y = observations[start:T,1], colour = "observations"))
+            }
+        }
     }
-    g <- qplot(x = start:T, y = observations[start:T]**2, geom = "line", colour = "squared observations")
-    g <- g + geom_line(aes(y = predictedsquaredobs[start:T,1], colour = "predicted mean"))
-    g <- g + geom_line(aes(y = predictedsquaredobs[start:T,2], colour = "90 pct confidence"))
-    g <- g + geom_line(aes(y = predictedsquaredobs[start:T,3], colour = "90 pct confidence"))
-    g <- g + scale_colour_discrete(name = "")
-    g <- g + xlab("time") + ylab("squared observations")
+    g <- g + xlab("time") + ylab(name) + scale_colour_discrete(name = "")
     print(g)
 }
 """

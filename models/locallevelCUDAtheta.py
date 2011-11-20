@@ -22,7 +22,7 @@
 from numpy import random, power, sqrt, exp, zeros_like, zeros, \
         ones, mean, average, prod, log
 from scipy.stats import norm, truncnorm, gamma
-from src.models import ParameterModel
+from src.parametermodel import ParameterModel
 
 
 #### See src/models.py for explanations about the model functions.

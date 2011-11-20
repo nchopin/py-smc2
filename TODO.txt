@@ -1,21 +1,21 @@
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»
 -»-»--»-»-- Things to do  »-»--»-»
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»
- - separer une partie des plots dans des launchers post processing: par exemple KF, ou les differentes predictions
- - du coup enlever les options KF dans les fichiers actuels
+
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
- - faire des fichiers separes pour modelx et modeltheta
- - centraliser les fonctions genre predictionObservations, predictionSquaredObservations, etc
- -> ca devrait etre dans "models"
--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
- - graphe de prediction des etats caches en SV
+
  - faire du menage dans le fichier userfile (commentaires etc)
  - (uniquement ensuite) dossier userfile templates
  - mettre a jour le manuel d'utilisation
+
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
+
  - SMCN: etude de variance: tracer des trajectoires d'estimateurs Zhat, voir si ca s'effondre
  - SMCN: faire un vrai intervalle de confiance et pas un intervalle qui prend des val negatives !!
 
  quand increaseNx, directement repasser à resample move avant observation suivante
  (le faire dans un nouveau SMC2bis parce que ça suppose pas mal de changement)
 
+ faire une fonction getSummary dans statespacemodel et dans paramerermodel
+ et envoyer directement le resultat dans le getResults des algos
+ (pour grapher)

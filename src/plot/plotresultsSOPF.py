@@ -21,7 +21,7 @@
 
 from __future__ import division
 import os, os.path
-from src.plotresults import PlotResults
+from src.plot.plotresults import PlotResults
 
 
 class PlotResultsSOPF(PlotResults):

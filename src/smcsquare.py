@@ -67,8 +67,12 @@ class SMCsquare:
         ## Filtering and Smoothing
         self.filtered = {}
         if self.AP["filtering"]:
-            for functionalnames in self.modelx.filteringdict.keys():
-                self.filtered[functionalnames] = zeros(self.T)
+            if hasattr(self.modelx, "filteringlist"):
+                self.filtered = []
+                for d in self.modelx.filteringlist:
+                    self.filtered.append(zeros((self.T, d["dimension"])))
+#            for functionalnames in self.modelx.filteringdict.keys():
+#                self.filtered[functionalnames] = zeros(self.T)
         self.smoothingEnable = algorithmparameters["smoothing"]
         self.smoothedmeans = {}
         self.smoothedvalues= {}
@@ -77,7 +81,6 @@ class SMCsquare:
             self.storesmoothingtime = algorithmparameters["storesmoothingtime"]
         ## Prediction
         if self.AP["prediction"]:
-            #self.predictedObs = zeros((self.T, 3))
             if hasattr(self.modelx, "predictionlist"):
                 self.predicted = []
                 for d in self.modelx.predictionlist:
@@ -283,16 +286,16 @@ class SMCsquare:
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
                 self.weighthistory[self.alreadystored, ...] = exp(self.thetalogweights[t, :])
                 self.alreadystored += 1
+    def filtering(self, t):
+        if hasattr(self.modelx, "filteringlist"):
+            for index, d in enumerate(self.modelx.filteringlist):
+                self.filtered[index][t, :] = d["function"](self.xparticles, \
+                    exp(self.thetalogweights[t,:]), self.thetaparticles, t)
     def prediction(self, t):
         if hasattr(self.modelx, "predictionlist"):
             for index, d in enumerate(self.modelx.predictionlist):
                 self.predicted[index][t, :] = d["function"](self.xparticles, \
-                    exp(self.thetalogweights[t-1,:]), self.thetaparticles, t)
-    def filtering(self, t):
-        for key in self.filtered.keys():
-            tempmatrix = self.modelx.filteringdict[key](self.xparticles, self.thetaparticles, t)
-            tempmatrix = mean(tempmatrix, axis = 0)
-            self.filtered[key][t] = average(tempmatrix, weights = exp(self.thetalogweights[t,:]))
+                    exp(self.thetalogweights[t - 1,:]), self.thetaparticles, t)
     def smoothing(self, t):
         print "\nsmoothing time"
         from singleSIR import SingleSIR
@@ -356,11 +359,14 @@ class SMCsquare:
                 "savingtimes": self.savingtimes, "ESS": self.ESS, "observations": self.observations, \
                 "acceptratios": self.acceptratios, "Nxlist": self.Nxlist, \
                 "increaseindices": self.increaseindices, "resamplingindices": self.resamplingindices, \
-                "evidences": self.evidences, "filtered": self.filtered, "smoothedmeans": self.smoothedmeans, \
+                "evidences": self.evidences, "smoothedmeans": self.smoothedmeans, \
                 "smoothedvalues": self.smoothedvalues, \
                 "computingtimes": self.computingtimes, "truestates": self.truestates}
+        if self.AP["filtering"]:
+            if hasattr(self, "filtered"):
+                for index, d in enumerate(self.modelx.filteringlist):
+                    resultsDict.update({"filtered%s" % d["name"]: self.filtered[index]})
         if self.AP["prediction"]:
-            #resultsDict.update({"predictedObs": self.predictedObs})
             if hasattr(self, "predicted"):
                 for index, d in enumerate(self.modelx.predictionlist):
                     resultsDict.update({"predicted%s" % d["name"]: self.predicted[index]})

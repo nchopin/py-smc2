@@ -27,7 +27,7 @@ from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
 import math
-from src.models import SSM
+from src.statespacemodel import SSM
 import pycuda.autoinit
 import pycuda.driver as drv
 from pycuda.compiler import SourceModule

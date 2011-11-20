@@ -27,7 +27,7 @@ from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
 import math
-from src.models import SSM
+from src.statespacemodel import SSM
 
 ################################################################
 # Simplest Linear Gaussian Model
@@ -86,33 +86,8 @@ modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
 modelx.parameters = array([rho])
-
-def firststate(xparticles, thetaparticles, t):
-    return xparticles[:, 0, :]
-modelx.setFiltering({"firststate": firststate})
-# this model is a linear gaussian model, we can specify it
-modelx.setRLinearGaussian(\
-"""
-dlm <- list("FF" = 1, "GG" = %.3f, "V" = %.3f, "W" = %.3f,
-             "m0" = 0, "C0" = 1)
-""" % (modelx.parameters[0], SIGMA2, TAU2))
-
-#Rtruelikelihood = \
-#"""
-#temptrueloglikelihood <- function(theta){
-#    somedlm <- dlm
-#    somedlm["GG"] <- theta
-#    return(KFLL(observations, somedlm))
-#}
-#trueloglikelihood <- function(theta){
-#    return(sapply(X= theta, FUN= temptrueloglikelihood))
-#}
-#trueunnormlikelihood <- function(theta) exp(trueloglikelihood(theta))
-#normlikelihood <- integrate(f = trueunnormlikelihood, lower = 0, upper = 1)$value
-#truelikelihood <- function(theta) trueunnormlikelihood(theta) / normlikelihood
-#"""
-#modelx.setRmarginals([Rtruelikelihood])
-
-
+modelx.addStateFiltering()
+modelx.addStatePrediction()
+modelx.addObsPrediction()
 
 

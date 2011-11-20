@@ -30,7 +30,7 @@ from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
 import math
-from src.models import SSM
+from src.statespacemodel import SSM
 from snippets.localfolder import get_path
 
 ############################################
@@ -148,34 +148,7 @@ modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
 modelx.parameters = array([0, 0, 0.5, 0.0625, 0.01])
-# filtering
-def firststate(xparticles, thetaparticles, t):
-    return xparticles[:, 0, :]
-def secondstate(xparticles, thetaparticles, t):
-    return xparticles[:, 1, :]
-modelx.setFiltering({"firststate": firststate, "secondstate": secondstate})
-def predictionObservations(xparticles, thetaweights, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros(3)
-    observations = zeros(Nx * Ntheta)
-    weightobs = zeros(Nx * Ntheta)
-    for j in range(Ntheta):
-        observations[(Nx * j):(Nx * (j+1))] = \
-                observationGenerator(xparticles[..., j], thetaparticles[:, j]).reshape(Nx)
-        weightobs[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
-    weightobs = weightobs / sum(weightobs)
-    obsmean = average(observations, weights = weightobs)
-    ind = argsort(observations)
-    observations = observations[ind]
-    weightobs = weightobs[ind]
-    cumweightobs = cumsum(weightobs)
-    quantile5 = observations[searchsorted(cumweightobs, 0.05)]
-    quantile95 = observations[searchsorted(cumweightobs, 0.95)]
-    result[0] = obsmean
-    result[1] = quantile5
-    result[2] = quantile95
-    return result
+modelx.addStateFiltering()
 def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
     Nx = xparticles.shape[0]
     Ntheta = xparticles.shape[2]
@@ -199,53 +172,9 @@ def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
     result[1] = quantile5
     result[2] = quantile95
     return result
-def predictionstate1(xparticles, thetaweights, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros(3)
-    predictedstate = zeros(Nx * Ntheta)
-    weight = zeros(Nx * Ntheta)
-    for j in range(Ntheta):
-        predictedstate[(Nx * j):(Nx * (j+1))] = xparticles[..., 0, j]
-        weight[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
-    weight = weight / sum(weight)
-    xmean = average(predictedstate, weights = weight)
-    ind = argsort(predictedstate)
-    predictedstate = predictedstate[ind]
-    weight = weight[ind]
-    cumweight = cumsum(weight)
-    quantile5 = predictedstate[searchsorted(cumweight, 0.05)]
-    quantile95 = predictedstate[searchsorted(cumweight, 0.95)]
-    result[0] = xmean
-    result[1] = quantile5
-    result[2] = quantile95
-    return result
-def predictionstate2(xparticles, thetaweights, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros(3)
-    predictedstate = zeros(Nx * Ntheta)
-    weight = zeros(Nx * Ntheta)
-    for j in range(Ntheta):
-        predictedstate[(Nx * j):(Nx * (j+1))] = xparticles[..., 1, j]
-        weight[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
-    weight = weight / sum(weight)
-    xmean = average(predictedstate, weights = weight)
-    ind = argsort(predictedstate)
-    predictedstate = predictedstate[ind]
-    weight = weight[ind]
-    cumweight = cumsum(weight)
-    quantile5 = predictedstate[searchsorted(cumweight, 0.05)]
-    quantile95 = predictedstate[searchsorted(cumweight, 0.95)]
-    result[0] = xmean
-    result[1] = quantile5
-    result[2] = quantile95
-    return result
-
-modelx.setPrediction([{"function": predictionSquaredObservations, "dimension": 3, "name": "squaredobs"}, \
-        {"function": predictionstate1, "dimension": 3, "name": "state1"}, \
-        {"function": predictionstate2, "dimension": 3, "name": "state2"}, \
-        {"function": predictionObservations, "dimension": 3, "name": "obs"}])
+modelx.addStatePrediction()
+modelx.addObsPrediction()
+modelx.addPredictionList([{"function": predictionSquaredObservations, "dimension": 3, "name": "squaredobs"}])
 
 
 

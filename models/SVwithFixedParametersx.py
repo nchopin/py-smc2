@@ -10,7 +10,7 @@ from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
 import os
 import math
-from src.models import SSM
+from src.statespacemodel import SSM
 from snippets.localfolder import get_path
 
 ############################################

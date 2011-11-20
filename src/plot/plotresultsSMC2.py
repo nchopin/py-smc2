@@ -21,7 +21,7 @@
 
 from __future__ import division
 import os, os.path
-from src.plotresults import PlotResults
+from src.plot.plotresults import PlotResults
 
 class PlotResultsSMC2(PlotResults):
     def __init__(self, resultsfolder, RDatafile):
@@ -48,13 +48,10 @@ class PlotResultsSMC2(PlotResults):
     def loadparameters(self):
         self.Rcode += \
 """
-indexhistory <- length(savingtimes)
-t <- savingtimes[indexhistory]
-w <- weighthistory[indexhistory,]
-w <- w / sum(w)
-#thetas <- as.data.frame(t(thetahistory[indexhistory,,]))
-#thetasDF <- cbind(thetas, w)
-#names(thetasDF) <- c(paste("Theta", 1:(nbparameters), sep = ""), "w")
+#indexhistory <- length(savingtimes)
+#t <- savingtimes[indexhistory]
+#w <- weighthistory[indexhistory,]
+#w <- w / sum(w)
 """
         self.parametersHaveBeenLoaded = True
     def acceptancerate(self):
@@ -74,10 +71,10 @@ ESSdataframe <- as.data.frame(cbind(1:length(ESS), ESS))
 g <- ggplot(data = ESSdataframe, aes(x = V1, y= ESS))
 g <- g + geom_line() + xlab("iterations") + ylab("ESS") + ylim(0, Ntheta)
 print(g)
-g <- ggplot(data = ESSdataframe, aes(x = V1, y= ESS))
-g <- g + geom_line() + xlab("iterations (square root scale)") + ylab("ESS (log)") + ylim(0, Ntheta)
-g <- g + scale_x_sqrt() + scale_y_log()
-print(g)
+#g <- ggplot(data = ESSdataframe, aes(x = V1, y= ESS))
+#g <- g + geom_line() + xlab("iterations (square root scale)") + ylab("ESS (log)") + ylim(0, Ntheta)
+#g <- g + scale_x_sqrt() + scale_y_log()
+#print(g)
 """
     def histogramparameter(self, parameterindex):
         if not(self.parametersHaveBeenLoaded):
@@ -102,18 +99,8 @@ g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
 """
 %s
 g <- g + stat_function(fun = priorfunction, aes(colour = "prior"), linetype = 1, size = 1)
-if (exists("marginals")){
-    g <- g + stat_function(fun = marginals[[i]], n = 50, aes(colour = "posterior"), linetype = 1, size = 1)
-}
 g <- g + scale_colour_discrete(name = "")
 """ % self.modeltheta.Rprior[parameterindex]
-#            if hasattr(self.modelx, "Rlikelihood"):
-#                self.Rcode += \
-#"""
-#%s
-#trueposterior <- function(x) priorfunction(x) * truelikelihood(x)
-#g <- g + stat_function(fun = trueposterior, colour = "green", size = 2)
-#""" % self.modelx.Rlikelihood[parameterindex]
         self.Rcode += \
 """
 print(g)
@@ -129,44 +116,22 @@ print(g)
     def addFiltered(self):
         self.Rcode += \
 """
-if (exists("truestates")){
-    if (is.null(dim(truestates))){
-        truestates <- as.matrix(truestates, ncol = 1)
-    }
+if (exists("truestates") && is.null(dim(truestates))){
+    truestates <- as.matrix(truestates, ncol = 1)
 }
 filteredquantities <- grep(patter="filtered", x = ls(), value = TRUE)
-if (length(filteredquantities) > 0){
-    if (exists("filteredfirststate")){
-        if (exists("kalmanresults")){
-            g <- qplot(x = 1:T, y = filteredfirststate, geom = "line", colour = "SMC2 mean")
-            g <- g + geom_line(aes(y = kalmanresults$FiltStateMean, colour = "KF mean"), alpha = 1.)
-            g <- g + geom_point(aes(y = kalmanresults$FiltStateMean, colour = "KF mean"))
-        } else {
-            g <- qplot(x = 1:T, y = filteredfirststate, geom = "line", colour = "SMC2 mean")
-            if (exists("truestates")){
-                g <- g + geom_line(aes(y = truestates[,1], colour = "True states"))
-            }
-        }
-        g <- g + xlab("time") + ylab("hidden states 1")
-        g <- g + scale_colour_discrete(name = "")
-        print(g)
-        filteredquantities <- filteredquantities[filteredquantities != "filteredfirststate"]
-        if (exists("filteredsecondstate")){
-            g <- qplot(x = 1:T, y = filteredsecondstate, geom = "line", colour = "SMC2 mean")
-            if (exists("truestates")){
-                g <- g + geom_line(aes(y = truestates[,2], colour = "True states"))
-            }
-            g <- g + xlab("time") + ylab("hidden states 2")
-            g <- g + scale_colour_discrete(name = "")
-            print(g)
-            filteredquantities <- filteredquantities[filteredquantities != "filteredsecondstate"]
-        }
+for (name in filteredquantities){
+    g <- qplot(x = 1:T, geom = "blank") 
+    g <- g + geom_line(aes_string(y = name,
+    colour = paste("'",name, "'", sep = "")))
+    if (name == "filteredstate1" && exists("truestates")){
+            g <- g + geom_line(aes(y = truestates[,1], colour = "True states"))
+    } else {
+        if (name == "filteredstate2" && exists("truestates"))
+            g <- g + geom_line(aes(y = truestates[,2], colour = "True states"))
     }
-    for (name in filteredquantities){
-        g <- qplot(x = 1:T, geom = "blank") + geom_line(aes_string(y = name))
-        g <- g + xlab("time") + ylab(name)
-        print(g)
-    }
+    g <- g + xlab("time") + ylab(name) + scale_colour_discrete(name = "")
+    print(g)
 }
 """
 

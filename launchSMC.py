@@ -30,7 +30,7 @@ from numpy import sum as numpysum
 from scipy.stats import norm
 from snippets.localfolder import get_path
 from src.singleSIR import SingleSIR
-from src.plotresultsSMC import PlotResultsSMC
+from src.plot.plotresultsSMC import PlotResultsSMC
 import subprocess
 
 #random.seed(17)

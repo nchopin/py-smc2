@@ -234,17 +234,17 @@ if userfile.GENERATERFILE:
     pdffile = RDatafile.replace(".RData", ".pdf")
     print "plotting results in pdf file: %s ..." % pdffile
     if userfile.METHOD == "SMC2":
-        from src.plotresultsSMC2 import PlotResultsSMC2
+        from src.plot.plotresultsSMC2 import PlotResultsSMC2
         plotter = PlotResultsSMC2(resultsfolder, RDatafile)
     elif userfile.METHOD == "adPMCMC":
-        from src.plotresultsPMMH import PlotResultsPMMH
+        from src.plot.plotresultsPMMH import PlotResultsPMMH
         plotter = PlotResultsPMMH(resultsfolder, RDatafile, \
                 userfile.PMCMCBURNIN)
     elif userfile.METHOD == "SOPF":
-        from src.plotresultsSOPF import PlotResultsSOPF
+        from src.plot.plotresultsSOPF import PlotResultsSOPF
         plotter = PlotResultsSOPF(resultsfolder, RDatafile)
     elif userfile.METHOD == "BSMC":
-        from src.plotresultsBSMC import PlotResultsBSMC
+        from src.plot.plotresultsBSMC import PlotResultsBSMC
         plotter = PlotResultsBSMC(resultsfolder, RDatafile)
     plotter.setParameters(thetamodule.modeltheta.parameternames)
     plotter.setModelTheta(thetamodule.modeltheta)

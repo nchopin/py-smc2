@@ -23,7 +23,7 @@ from numpy import random, power, sqrt, exp, zeros, zeros_like, \
         ones, mean, average, prod, log, sum, repeat, \
         array, float32, int32
 from scipy.stats import norm, truncnorm, gamma
-from src.models import ParameterModel
+from src.parametermodel import ParameterModel
 
 
 #def invgamma_logpdf(logx, shape, scale):
