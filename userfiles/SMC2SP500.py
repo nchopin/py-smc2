@@ -26,18 +26,18 @@
 # Once you've chosen the paramerers, launch the script "launch.py" by typing
 # :~$ python launch.py
 
-RANDOMSEED = False
+RANDOMSEED = True
 ##
-MODEL = "SVmultifactor"
-T = 15
+MODEL = "SVonefactor"
+T = 1000
 DATASET = "SP500recent"
 METHOD = "SMC2"
 ##
 GENERATERFILE = True
 PLOT = True
 ##
-NTHETA = 200
-NX = 100
+NTHETA = 1000
+NX = 250
 DYNAMICNX = True
 PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
@@ -49,7 +49,7 @@ NBMOVES = 1
 ##
 NSOPF = 100000
 ##
-NBSMC = 50000
+NBSMC = 100000
 BSMCsmooth = 0.1
 ##
 NPMCMC = 200
@@ -57,8 +57,8 @@ TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
 #SAVINGTIMES = [250]
-#SAVINGTIMES = [250, 500]
-SAVINGTIMES = []
+SAVINGTIMES = [250, 500]
+#SAVINGTIMES = []
 SMOOTHING = False
 FILTERING = True
 PREDICTION = True
@@ -66,9 +66,9 @@ SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 ##
 PROFILING = True
-RESULTSFILENAME = "temp"
-REPLACEFILE = True
-USESUBFOLDERS = False
+RESULTSFILENAME = ""
+REPLACEFILE = False
+USESUBFOLDERS = True
 RESULTSFILETYPE = ["RData"]
 
 ##################################################################
@@ -82,7 +82,7 @@ RESULTSFILETYPE = ["RData"]
 ### Models and datasets options
 # MODEL is a string, there has to be files named MODELx.py and MODELtheta.py
 # in the models/ subfolder. Provided models are: 
-# - hiddenAR: most basic linear gaussian SSM
+# - simplestmodel: most basic linear gaussian SSM
 # - locallevel: basic linear gaussian SSM
 # - thetalogistic: population model with non linear hidden process (Polansky's parameterization)
 # - periodic: highly non linear model from Gordon Salmond and Smith

@@ -70,7 +70,6 @@ modeltheta.setPriorgenerator(rprior)
 modeltheta.setParameterNames(["expression(mu)", "expression(beta)", \
         "expression(xi)", "expression(omega^2)", "expression(lambda)"])
 modeltheta.setTransformation(["none", "none", "log", "log", "log"])
-modeltheta.setRtruevalues([0, 0, 0.5, 0.0625, 0.01])
 modeltheta.setRprior(["priorfunction <- function(x) dnorm(x, sd = %.5f)" % hyperparameters["mu_sd"], \
                             "priorfunction <- function(x) dnorm(x, sd = %.5f)" % hyperparameters["beta_sd"], \
                             "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["xi_rate"], \

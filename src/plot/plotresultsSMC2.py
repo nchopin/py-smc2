@@ -57,10 +57,10 @@ class PlotResultsSMC2(PlotResults):
     def acceptancerate(self):
         self.Rcode += \
 """
-acceptratiodataframe <- as.data.frame(cbind(resamplingindices, acceptratios))
-g <- ggplot(data = acceptratiodataframe, aes(x = resamplingindices, y= acceptratios))
-g <- g + geom_point(size = 4) + geom_line() + xlab("iterations") + ylab("acceptance rates")
-g <- g + xlim(0, T) + ylim(0, 1) 
+g <- qplot(x = resamplingindices, y = acceptratios, geom = "line", colour = "acceptance rates")
+#g <- g + geom_line(aes(y = guessAR, colour = "guessed acceptance rates"))
+g <- g + xlim(0, T) + ylim(0, 1) +  opts(legend.position = "bottom", legend.direction = "horizontal")
+g <- g + scale_colour_discrete(name = "") + xlab("time") + ylab("acceptance rates")
 print(g)
 """
     def ESS(self):
@@ -85,15 +85,14 @@ indexhistory <- length(savingtimes)
 w <- weighthistory[indexhistory,]
 w <- w / sum(w)
 i <- %(parameterindex)i
-g <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") + 
-  geom_histogram(aes(y = ..density..)) + geom_density(fill = "blue", alpha = 0.5) +
-    xlab(%(parametername)s)
+g <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank")
+g <- g + geom_histogram(aes(y = ..density..)) + geom_density(fill = "blue", alpha = 0.5)
+g <- g + xlab(%(parametername)s)
+if (exists("trueparameters")){
+    g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+}
+g <- g + opts(legend.position = "bottom", legend.direction = "horizontal")
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
-        if hasattr(self.modeltheta, "truevalues"):
-            self.Rcode += \
-"""
-g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
-"""
         if hasattr(self.modeltheta, "Rprior"):
             self.Rcode += \
 """
@@ -131,6 +130,7 @@ for (name in filteredquantities){
             g <- g + geom_line(aes(y = truestates[,2], colour = "True states"))
     }
     g <- g + xlab("time") + ylab(name) + scale_colour_discrete(name = "")
+    g <- g + opts(legend.position = "bottom", legend.direction = "horizontal")
     print(g)
 }
 """

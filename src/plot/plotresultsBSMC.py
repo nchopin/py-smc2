@@ -61,10 +61,11 @@ class PlotResultsBSMC(PlotResults):
 #g <- g + geom_histogram(aes(y=..density..), colour = "black", fill = "white")
 #g <- g + geom_density(fill = "%(color)s", alpha = 0.5) + xlab(%(parametername)s)
 """ % {"parameterindex": parameterindex + 1, "parametername": self.parameternames[parameterindex], "color": self.color}
-        if hasattr(self.modeltheta, "truevalues"):
-            self.Rcode += \
+        self.Rcode += \
 """
-#g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+#if (exists("trueparameters")){
+#    g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+#}
 """
         if hasattr(self.modeltheta, "Rprior"):
             self.Rcode += \

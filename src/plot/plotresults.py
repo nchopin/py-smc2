@@ -32,7 +32,6 @@ class PlotResults:
         self.RDatafile = RDatafile
         self.pdffile = self.RDatafile.replace(".RData", ".pdf")
         self.plotresultsfile = self.pdffile.replace(".pdf", "-plots.R")
-        self.plottingInstructions = []
         self.Rcode = \
 """
 rm(list = ls())
@@ -49,25 +48,21 @@ load(file = resultsfile)
         "pdffile": self.pdffile}
     def setModelTheta(self, modeltheta):
         self.modeltheta = modeltheta
-        if hasattr(self.modeltheta, "truevalues"):
-            self.Rcode += \
+        #self.additionalPlots = self.modeltheta.additionalPlots
+        self.Rcode += \
 """
-truevalues <- c(%s)
-""" % ",".join([str(value) for value in self.modeltheta.truevalues])
-        if len(self.modeltheta.plottingInstructions) > 0:
-            self.plottingInstructions = self.modeltheta.plottingInstructions
-        self.additionalPlots = self.modeltheta.additionalPlots
+nbparameters <- %i
+""" % self.modeltheta.parameterdimension
     def setModelX(self, modelx):
         self.modelx = modelx
-    def setParameters(self, names):
+    def setParameterNames(self, names):
         self.parameterdimension = len(names)
         self.parameternames = names
     def allParameters(self):
         for parameterindex in range(self.parameterdimension):
             self.singleparameter(parameterindex)
     def addObservations(self):
-        if not("No observations" in self.plottingInstructions):
-            self.Rcode += \
+        self.Rcode += \
 """
 observationsDF <- cbind(data.frame(observations), 1:length(observations))
 names(observationsDF) <- c("y", "index")
@@ -104,8 +99,12 @@ for (name in predictedquantities){
             if (name == "predictedobservations"){
                 g <- g + geom_line(aes(y = observations[start:T,1], colour = "observations"))
             }
+            if (name == "predictedsquaredobs"){
+                g <- g + geom_line(aes(y = observations[start:T,1]**2, colour = "squared observations"))
+            }
         }
     }
+    g <- g + opts(legend.position = "bottom", legend.direction = "horizontal")
     g <- g + xlab("time") + ylab(name) + scale_colour_discrete(name = "")
     print(g)
 }
@@ -120,7 +119,7 @@ print(g)
 """
 
     def close(self):
-        self.Rcode += self.additionalPlots
+        #self.Rcode += self.additionalPlots
         self.Rcode += \
 """
 dev.off()

@@ -30,7 +30,7 @@ import math
 from src.statespacemodel import SSM
 
 ################################################################
-# Simplest Linear Gaussian Model
+# Linear Gaussian Model: hidden autoregressive process
 # X = rho * X + sigma Epsilon
 # Y = X + tau Eta
 # X_0 ~ N(0, 1)
@@ -85,7 +85,7 @@ modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
-modelx.parameters = array([rho])
+modelx.setParameters(array([rho]))
 modelx.addStateFiltering()
 modelx.addStatePrediction()
 modelx.addObsPrediction()

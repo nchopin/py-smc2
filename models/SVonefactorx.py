@@ -23,7 +23,7 @@ from __future__ import division
 from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
         array, zeros_like, newaxis, \
-        argsort, var, cumsum, searchsorted
+        argsort, cumsum, searchsorted
 from numpy import sum as numpysum
 from numpy import max as numpymax
 from scipy.stats import norm, truncnorm, gamma
@@ -147,8 +147,10 @@ modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
-modelx.parameters = array([0, 0, 0.5, 0.0625, 0.01])
+modelx.setParameters(array([0, 0, 0.5, 0.0625, 0.01]))
 modelx.addStateFiltering()
+modelx.addStatePrediction()
+modelx.addObsPrediction()
 def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
     Nx = xparticles.shape[0]
     Ntheta = xparticles.shape[2]
@@ -172,8 +174,6 @@ def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
     result[1] = quantile5
     result[2] = quantile95
     return result
-modelx.addStatePrediction()
-modelx.addObsPrediction()
 modelx.addPredictionList([{"function": predictionSquaredObservations, "dimension": 3, "name": "squaredobs"}])
 
 

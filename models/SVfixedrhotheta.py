@@ -58,37 +58,6 @@ def rprior(size, hyperparameters):
     parameters[6, :] = w
     return parameters
 
-def rInitDistribution(size):
-    """ returns untransformed parameters """
-    mu = norm.rvs(size = size, loc = 0, scale = sqrt(2))
-    beta = norm.rvs(size = size, loc = 0, scale = sqrt(2))
-    xi = random.exponential(scale = 1, size = size)
-    omega2 = random.exponential(scale = 1, size = size)
-    lamb = random.exponential(scale = 1, size = size)
-    lambadd = random.exponential(scale = 2, size = size)
-    w = random.uniform(size = size)
-    parameters = zeros((7, size))
-    parameters[0, :] = mu
-    parameters[1, :] = beta
-    parameters[2, :] = xi
-    parameters[3, :] = omega2
-    parameters[4, :] = lamb
-    parameters[5, :] = lambadd
-    parameters[6, :] = w
-    return parameters
-
-def dInitDistribution(parameters):
-    """ takes transformed parameters """
-    mu_part = - 0.5 / (2) * (parameters[0] - 0)**2
-    beta_part = - 0.5 / (2) * (parameters[1] - 0)**2
-    xi_part = parameters[2] - 1 * exp(parameters[2])
-    omega2_part = parameters[3] - 1 * exp(parameters[3])
-    lamb1_part = parameters[4] - 1 * exp(parameters[4])
-    lambadd_part = parameters[5] - 0.5 * exp(parameters[5])
-    w_part = parameters[6] - 2 * log(1 + exp(parameters[6]))
-    return mu_part + beta_part + xi_part + omega2_part + lamb1_part + lambadd_part + w_part
-
-
 hyperparameters = { \
         "mu_mean": 0, "mu_sd": sqrt(2), \
         "beta_mean": 0, "beta_sd": sqrt(2), \
@@ -100,19 +69,10 @@ modeltheta = ParameterModel(name = "SV multi-factor", dimension = 7)
 modeltheta.setHyperparameters(hyperparameters)
 modeltheta.setPriorlogdensity(logdprior)
 modeltheta.setPriorgenerator(rprior)
-modeltheta.setInitDistribution(rInitDistribution, dInitDistribution)
 modeltheta.setParameterNames(["expression(mu)", "expression(beta)", \
         "expression(xi)", "expression(omega^2)", "expression(lambda[1])", "expression(lambda[2] - lambda[1])", \
         "expression(w[1])"])
-#modeltheta.setTransformation([False, False, True, True, True, True, True, False, False])
 modeltheta.setTransformation(["none", "none", "log", "log", "log", "log", "logit"])
-modeltheta.additionalPlots = """
-observationsDF <- cbind(data.frame(observations ** 2), 1:length(observations))
-names(observationsDF) <- c("y", "index")
-g <- ggplot(data = observationsDF, aes(x = index, y = y)) 
-g <- g + geom_line() + ylab("squared observations")
-print(g)
-"""
 modeltheta.setRprior(["priorfunction <- function(x) dnorm(x, sd = %.5f)" % hyperparameters["mu_sd"], \
                       "priorfunction <- function(x) dnorm(x, sd = %.5f)" % hyperparameters["beta_sd"], \
                       "priorfunction <- function(x) dexp(x, rate = %.5f)" % hyperparameters["xi_rate"], \

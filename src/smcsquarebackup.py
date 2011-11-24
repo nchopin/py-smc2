@@ -25,12 +25,11 @@ from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
         array, float32, int32, cov, isnan, zeros_like, \
         var, isinf, linalg, pi, dot, argmax, transpose, diag, \
-        newaxis, outer, minimum, triu_indices, apply_along_axis
+        newaxis
 from numpy import max as numpymax
 from numpy import min as numpymin
 from numpy import sum as numpysum
 from scipy.stats import norm
-from scipy.spatial import distance
 from resampling import IndResample, resample2D
 from various import ESSfunction, progressbar
 from parallelSIRs import ParallelSIRs
@@ -45,6 +44,7 @@ class SMCsquare:
         self.modelx = model["modelx"]
         self.modeltheta = model["modeltheta"]
         self.observations = model["observations"]
+        self.truestates = model["truestates"]
         self.statedimension = self.modelx.xdimension
         self.obsdimension = self.modelx.ydimension
         # get the basic algorithmic parameters
@@ -53,7 +53,7 @@ class SMCsquare:
         self.Ntheta = algorithmparameters["Ntheta"]
         self.T = self.observations.shape[0]
         self.excludedobservations = self.modelx.excludedobservations
-        # initialize main matrices and vectors
+        # initialize huge matrices and vectors
         self.thetaparticles = zeros((self.modeltheta.parameterdimension, self.Ntheta))
         self.transformedthetaparticles = zeros((self.modeltheta.parameterdimension, self.Ntheta))
         self.thetalogweights = zeros((self.T, self.Ntheta))
@@ -63,7 +63,6 @@ class SMCsquare:
         self.constants = zeros(self.Ntheta)
         self.logLike = zeros(self.Ntheta)
         self.totalLogLike = zeros(self.Ntheta)
-        self.priordensityeval = zeros(self.Ntheta)
         self.evidences = zeros(self.T)
         ## Filtering and Smoothing
         self.filtered = {}
@@ -72,6 +71,8 @@ class SMCsquare:
                 self.filtered = []
                 for d in self.modelx.filteringlist:
                     self.filtered.append(zeros((self.T, d["dimension"])))
+#            for functionalnames in self.modelx.filteringdict.keys():
+#                self.filtered[functionalnames] = zeros(self.T)
         self.smoothingEnable = algorithmparameters["smoothing"]
         self.smoothedmeans = {}
         self.smoothedvalues= {}
@@ -91,7 +92,6 @@ class SMCsquare:
         self.resamplingindices = []
         # store the acceptance ratios of each move step
         self.acceptratios = []
-        #self.guessacceptratios = []
         # store all Nx 
         # (in case it is automatically increasing along the iterations)
         self.Nxlist = [self.Nx]
@@ -120,8 +120,9 @@ class SMCsquare:
         """
         Double the number of x-particles.
         """
-        print "increasing Nx: from %i to %i" % (self.Nx, 2 * self.Nx)
+        print "increasing Nx: from %i" % self.Nx
         self.Nx = 2 * self.Nx
+        print "to %i" % self.Nx
         biggerSIRs = ParallelSIRs(self.Nx, self.thetaparticles, self.observations[0:(t+1),:], self.modelx)
         biggerSIRs.first_step()
         biggerSIRs.next_steps()
@@ -148,51 +149,52 @@ class SMCsquare:
         self.transformedthetaparticles[...] = self.transformedthetaparticles[:, indices]
         self.xparticles[...] = self.xparticles[:, :, indices]
         self.totalLogLike[:] = self.totalLogLike[indices]
-        self.priordensityeval[:] = self.priordensityeval[indices]
         self.thetalogweights[t, :] = 0.
 
     def PMCMCstep(self, t):
         """
         Perform a PMMH move step on each theta-particle.
         """
+        #print "blip during move step 0 "
         transformedthetastar = self.modeltheta.proposal(self.transformedthetaparticles, \
                 self.proposalcovmatrix, hyperparameters = self.modeltheta.hyperparameters,\
                 proposalmean = self.proposalmean, proposalkernel = self.AP["proposalkernel"])
+        # the problem is inside untransform for simplestmodel
+        # something's wrong with the logit transform
+        #print self.proposalmean
+        #print self.proposalcovmatrix
         thetastar = self.modeltheta.untransform(transformedthetastar)
         proposedSIRs = ParallelSIRs(self.Nx, thetastar, self.observations[0:(t+1)], self.modelx)
         proposedSIRs.first_step()
         proposedSIRs.next_steps()
         proposedTotalLogLike = proposedSIRs.getTotalLogLike()
         acceptations = zeros(self.Ntheta)
-        proposedpriordensityeval = apply_along_axis(func1d = self.modeltheta.priorlogdensity,\
-                arr = transformedthetastar, axis = 0)
-        proposedlogomega = proposedTotalLogLike + proposedpriordensityeval
-        currentlogomega = self.totalLogLike + self.priordensityeval
-        # if proposal kernel == "randomwalk", then nothing else needs to be computed
-        # since the RW is symmetric. If the proposal kernel is independent, then
-        # the density of the multivariate gaussian used to generate the proposals
-        # needs to be taken into account
         if self.AP["proposalkernel"] == "randomwalk":
-            pass
+            for i in range(self.Ntheta):
+                proposedlogomega = proposedTotalLogLike[i] + self.modeltheta.priorlogdensity(transformedthetastar[:, i])
+                currentlogomega = self.totalLogLike[i] + self.modeltheta.priorlogdensity(self.transformedthetaparticles[:, i])
+                acceptations[i]  = (log(random.uniform(size = 1)) < (proposedlogomega - currentlogomega))
+                if acceptations[i]:
+                    self.transformedthetaparticles[:, i] = transformedthetastar[:, i].copy()
+                    self.thetaparticles[:, i] = thetastar[:, i].copy()
+                    self.totalLogLike[i] = proposedTotalLogLike[i].copy()
+                    self.xparticles[:, :, i] = proposedSIRs.xparticles[:, :, i].copy()
         elif self.AP["proposalkernel"] == "independent":
             invSigma = linalg.inv(self.proposalcovmatrix)
             def multinorm_logpdf(x):
                 centeredx = (x - self.proposalmean)
                 return -0.5 * dot(dot(centeredx, invSigma), centeredx)
-            proposaltermstar = apply_along_axis(func1d = multinorm_logpdf, \
-                    arr = transformedthetastar, axis = 0)
-            proposedlogomega -= proposaltermstar
-            proposaltermcurr = apply_along_axis(func1d = multinorm_logpdf, \
-                    arr = self.transformedthetaparticles, axis = 0)
-            currentlogomega  -= proposaltermcurr
-        for i in range(self.Ntheta):
-            acceptations[i]  = (log(random.uniform(size = 1)) < (proposedlogomega[i] - currentlogomega[i]))
-            if acceptations[i]:
-                self.transformedthetaparticles[:, i] = transformedthetastar[:, i].copy()
-                self.thetaparticles[:, i] = thetastar[:, i].copy()
-                self.totalLogLike[i] = proposedTotalLogLike[i].copy()
-                self.priordensityeval[i] = proposedpriordensityeval[i].copy()
-                self.xparticles[:, :, i] = proposedSIRs.xparticles[:, :, i].copy()
+            for i in range(self.Ntheta):
+                proposedlogomega = proposedTotalLogLike[i] + self.modeltheta.priorlogdensity(transformedthetastar[:, i])
+                proposedlogomega -= multinorm_logpdf(transformedthetastar[:, i])
+                currentlogomega = self.totalLogLike[i] + self.modeltheta.priorlogdensity(self.transformedthetaparticles[:, i])
+                currentlogomega -= multinorm_logpdf(self.transformedthetaparticles[:, i])
+                acceptations[i]  = (log(random.uniform(size = 1)) < (proposedlogomega - currentlogomega))
+                if acceptations[i]:
+                    self.transformedthetaparticles[:, i] = transformedthetastar[:, i].copy()
+                    self.thetaparticles[:, i] = thetastar[:, i].copy()
+                    self.totalLogLike[i] = proposedTotalLogLike[i].copy()
+                    self.xparticles[:, :, i] = proposedSIRs.xparticles[:, :, i].copy()
         acceptrate = sum(acceptations) / self.Ntheta
         self.acceptratios.append(acceptrate)
     def first_step(self):
@@ -205,8 +207,7 @@ class SMCsquare:
         self.transformedthetaparticles[...] = self.modeltheta.transform(self.thetaparticles)
         for i in range(self.Ntheta):
             self.xparticles[:, :, i] = self.modelx.firstStateGenerator(self.thetaparticles[:, i], size = self.Nx)
-        self.priordensityeval = apply_along_axis(func1d = self.modeltheta.priorlogdensity,\
-                arr = self.transformedthetaparticles, axis = 0)
+
     def next_steps(self):
         """
         Perform all the iterations until time T == number of observations.
@@ -251,7 +252,7 @@ class SMCsquare:
                 progressbar(t / (self.T - 1), text = " ESS: %.3f, Nx: %i" % (self.ESS[t], self.Nx))
             else:
                 progressbar(t / (self.T - 1), text = " ESS: %.3f" % self.ESS[t])
-            while self.ESS[t] < (self.AP["ESSthreshold"] * self.Ntheta):
+            if self.ESS[t] < (self.AP["ESSthreshold"] * self.Ntheta):
                 progressbar(t / (self.T - 1), text =\
                         " ESS: %.3f - resample move step at iteration = %i" % (self.ESS[t], t))
                 covdict = self.computeCovarianceAndMean(t)
@@ -263,18 +264,15 @@ class SMCsquare:
                     self.proposalmean = covdict["mean"]
                 self.thetaresample(t)
                 self.resamplingindices.append(t)
-                self.ESS[t] = ESSfunction(exp(self.thetalogweights[t, :]))
                 for move in range(self.AP["nbmoves"]):
-#                    if self.AP["proposalkernel"] == "independent":
-#                        self.guessAcceptrate()
                     self.PMCMCstep(t)
                     acceptrate = self.acceptratios[-1]
                     progressbar(t / (self.T - 1), text = \
                             " \nresample move step at iteration = %i - acceptance rate: %.3f\n" % (t, acceptrate))
-                    if self.acceptratios[-1] < self.AP["dynamicNxThreshold"] and self.Nx <= (self.AP["NxLimit"] / 2) \
+                    if self.acceptratios[-1] < self.AP["dynamicNxThreshold"] and self.Nx < (self.AP["NxLimit"] / 2) \
                             and self.AP["dynamicNx"]:
+                        print "\nincreasing the number of x-particles... "
                         self.increaseParticlesNb(t)
-                        self.ESS[t] = ESSfunction(exp(self.thetalogweights[t, :]))
             new_tic = time.time()
             self.computingtimes[t] = new_tic - last_tic
             last_tic = new_tic
@@ -320,11 +318,19 @@ class SMCsquare:
                     self.smoothedvalues[smoothkey][:] = tempmean
         print "smoothing done!"
     def computeCovarianceAndMean(self, t):
+        #print self.transformedthetaparticles.shape
         X = transpose(self.transformedthetaparticles)
+        #print "\nrange of the transformed particles:"
+        #print numpymin(self.transformedthetaparticles), numpymax(self.transformedthetaparticles)
+        #print "counting the ones"
+        #print sum(self.thetaparticles == 1)
+        #print X.shape
         w = exp(self.thetalogweights[t, :])
         w = w / numpysum(w)
         weightedmean = average(X, weights = w, axis = 0)
+        #print weightedmean.shape
         diagw = diag(w)
+        #print diagw.shape
         part1 = dot(transpose(X), dot(diagw, X))
         Xtw = dot(transpose(X), w[:, newaxis])
         part2 = dot(Xtw, transpose(Xtw))
@@ -334,47 +340,27 @@ class SMCsquare:
         # increase a little bit the diagonal to prevent degeneracy effects
         weightedcovariance += diag(zeros(self.modeltheta.parameterdimension) + 10**(-4)/self.modeltheta.parameterdimension)
         return {"mean": weightedmean, "cov": weightedcovariance}
+
     def getEvidence(self, thetalogweights, loglike):
         """
         Return the evidence at a given time
         """
         return average(exp(loglike), weights = exp(thetalogweights))
-#    def guessAcceptrate(self):
-#        invSigma = linalg.inv(self.proposalcovmatrix)
-#        def multinorm_logpdf(x):
-#            centeredx = (x - self.proposalmean)
-#            return -0.5 * dot(dot(centeredx, invSigma), centeredx)
-#        logomegas = self.totalLogLike + self.priordensityeval - \
-#                apply_along_axis(func1d = multinorm_logpdf, arr = self.transformedthetaparticles, axis = 0)
-#        w = exp(-logomegas)
-#        w = w / numpysum(w)
-#        #w = ones(self.Ntheta) / self.Ntheta
-#        import matplotlib.pyplot as plt
-#        plt.hist(x = self.transformedthetaparticles[0,:], weights = w, bins = 50, normed=1)
-#        plt.show()
-#        acceptrate = 0.
-#        for k in range(self.Ntheta):
-#            AR = minimum(1, exp(logomegas - logomegas[k]))
-#            acceptrate += sum( w * AR)
-#            #acceptrate += 1 / (self.Ntheta) * (sum(AR) - AR[k])
-#        acceptrate /= self.Ntheta
-#        guessar = acceptrate
-#        print "\nI'm guessing the next acceptance rate will be ~ %.1f %%" % (guessar * 100)
-#        self.guessacceptratios.append(guessar)
+
     def getResults(self):
         """
         Return a dictionary with vectors of interest.
         """
-        resultsDict = {"Ntheta" : self.Ntheta, "Nx" : self.Nx, "T": self.T, \
+        resultsDict = {"trueparameters": self.modelx.parameters, \
+                "nbparameters" : self.modeltheta.parameterdimension, \
+                "Ntheta" : self.Ntheta, "Nx" : self.Nx, "T": self.T, \
                 "thetahistory": self.thetahistory, "weighthistory": self.weighthistory, \
                 "savingtimes": self.savingtimes, "ESS": self.ESS, "observations": self.observations, \
                 "acceptratios": self.acceptratios, "Nxlist": self.Nxlist, \
                 "increaseindices": self.increaseindices, "resamplingindices": self.resamplingindices, \
                 "evidences": self.evidences, "smoothedmeans": self.smoothedmeans, \
                 "smoothedvalues": self.smoothedvalues, \
-                "computingtimes": self.computingtimes}
-#        if self.AP["proposalkernel"] == "independent":
-#            resultsDict.update({"guessAR": self.guessacceptratios})
+                "computingtimes": self.computingtimes, "truestates": self.truestates}
         if self.AP["filtering"]:
             if hasattr(self, "filtered"):
                 for index, d in enumerate(self.modelx.filteringlist):

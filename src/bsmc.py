@@ -30,7 +30,7 @@ from numpy import min as numpymin
 from numpy import sum as numpysum
 import scipy.weave as weave
 from resampling import IndResample
-from various import fastWeightedCov, ESSfunction, progressbar
+from various import fastWeightedCov, progressbar
 
 class BSMC:
     """
@@ -44,7 +44,6 @@ class BSMC:
         self.modelx = model["modelx"]
         self.modeltheta = model["modeltheta"]
         self.observations = model["observations"]
-        self.truestates = model["truestates"]
         # parameters...
         self.N = algorithmparameters["N"]
         self.smooth = algorithmparameters["smooth"]
@@ -64,7 +63,6 @@ class BSMC:
         self.savingtimes.append(self.T)
         self.hsq = power(self.smooth, 2)
         self.shrink = sqrt(1 - self.hsq)
-        #self.ESS = zeros(self.T)
         self.resamplingindices = []
         self.evidences = zeros(self.T)
         # number of already past saving times
@@ -132,8 +130,6 @@ class BSMC:
                 self.hsq * covmean["cov"], size = self.N))
             self.transformedthetaparticles[...] = m + noise
             self.thetaparticles[...] = self.modeltheta.untransform(self.transformedthetaparticles)
-            #self.ESS[t] = ESSfunction(self.xweights[:])
-            #if self.ESS[t] < (self.ESSthreshold * self.N):
             self.resample()
             self.resamplingindices.append(t)
             new_tic = time.time()
@@ -157,17 +153,15 @@ class BSMC:
                 self.predicted[index][t, :] = d["function"](self.xparticles[newaxis,...], \
                     w, self.thetaparticles, t)
     def getResults(self):
-        resultsDict = {"trueparameters" : self.modelx.parameters,\
-                "N" : self.N, "T" : self.T, "nbparameters" : self.modeltheta.parameterdimension, \
+        resultsDict = {"N" : self.N, "T" : self.T, \
                 "observations": self.observations, \
                 "savingtimes" : self.savingtimes, \
                 "thetahistory": self.thetahistory, \
                 "weighthistory": self.weighthistory, \
                 "evidences": self.evidences, \
                 "resamplingindices": self.resamplingindices, \
-                "computingtimes": self.computingtimes, "truestates": self.truestates}
+                "computingtimes": self.computingtimes}
         if self.AP["prediction"]:
-            #resultsDict.update({"predictedObs": self.predictedObs})
             if hasattr(self, "predicted"):
                 for index, d in enumerate(self.modelx.predictionlist):
                     resultsDict.update({"predicted%s" % d["name"]: self.predicted[index]})

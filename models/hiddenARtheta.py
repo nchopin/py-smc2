@@ -40,7 +40,7 @@ def logdprior(parameters, hyperparameters):
     """
     # the following is the log density of Y = logit(U) when U is Uniform(0,1)
     rho_part = safelogdlogit(array([parameters[0]]))
-    return rho_part
+    return rho_part[0]
 
 def rprior(size, hyperparameters):
     """ returns untransformed parameters """
@@ -56,7 +56,6 @@ modeltheta.setPriorlogdensity(logdprior)
 modeltheta.setPriorgenerator(rprior)
 modeltheta.setParameterNames(["expression(rho)"])
 modeltheta.setTransformation(["logit"])
-modeltheta.setRtruevalues([0.8])
 uniformprior = \
 """
 priorfunction <- function(x){

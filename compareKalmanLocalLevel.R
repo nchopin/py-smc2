@@ -11,9 +11,9 @@ load(file = resultsfile)
 trueparameters
 dlm <- list("FF" = 1, "GG" = 1, "V" = trueparameters[2], "W" = trueparameters[1],
              "m0" = 0, "C0" = 1)
-POSTERIOR <- FALSE
-FILTERING <- TRUE
-
+POSTERIOR <- TRUE
+FILTERING <- FALSE
+pdf(file = "compareKFLocalLevel.pdf")
 KF <- function(observations, somedlm){
   T <- length(observations)
   m <- rep(0, T + 1); C <- rep(1, T + 1)
@@ -97,26 +97,27 @@ if (POSTERIOR){
   w <- weighthistory[indexhistory,]
   w <- w / sum(w)
   i <- 1
-  g <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") + 
+  g1 <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") + 
     geom_histogram(aes(y = ..density..)) + geom_density(fill = "blue", alpha = 0.5) +
       xlab(expression(rho))
-  g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+  g1 <- g1 + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
   
-  g <- g + stat_function(fun = priorfunction, aes(colour = "prior"), linetype = 1, size = 1)
-  g <- g + stat_function(fun = marginals[[i]], aes(colour = "posterior"), size = 2)
-  g <- g + scale_colour_discrete(name = "")
-  print(g)
+  g1 <- g1 + stat_function(fun = priorfunction, aes(colour = "prior"), linetype = 1, size = 1)
+  g1 <- g1 + stat_function(fun = marginals[[i]], aes(colour = "posterior"), size = 2)
+  g1 <- g1 + scale_colour_discrete(name = "")
+  print(g1)
   i <- 2
-  g <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") + 
+  g2 <- qplot(x = thetahistory[indexhistory,i,], weight = w, geom = "blank") + 
     geom_histogram(aes(y = ..density..)) + geom_density(fill = "blue", alpha = 0.5) +
       xlab(expression(rho))
-  g <- g + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
+  g2 <- g2 + geom_vline(xintercept = trueparameters[i], linetype = 2, size = 1)
   
-  g <- g + stat_function(fun = priorfunction, aes(colour = "prior"), linetype = 1, size = 1)
-  g <- g + stat_function(fun = marginals[[i]], aes(colour = "posterior"), size = 2)
-  g <- g + scale_colour_discrete(name = "")
-  print(g)
+  g2 <- g2 + stat_function(fun = priorfunction, aes(colour = "prior"), linetype = 1, size = 1)
+  g2 <- g2 + stat_function(fun = marginals[[i]], aes(colour = "posterior"), size = 2)
+  g2 <- g2 + scale_colour_discrete(name = "")
+  print(g2)
 }
+
 ###################################
 # filtering
 if (FILTERING){
@@ -129,7 +130,7 @@ if (FILTERING){
   g <- g + scale_colour_discrete(name = "")
   print(g)
 }
-
+dev.off()
 
 
 

@@ -170,10 +170,9 @@ modelx = SSM("SV multi-factor", xdimension = 5, ydimension = 1)
 modelx.setFirstStateGenerator(firstStateGenerator)
 modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
-# Values used to generate the synthetic dataset when needed:
-# (untransformed parameters)
-# stupid values in this case, we don't simulate datasets from this model anyway
-modelx.parameters = array([0, 0, 0., 0., 0., 0, 0.])
+modelx.addStateFiltering()
+modelx.addStatePrediction()
+modelx.addObsPrediction()
 
 
 

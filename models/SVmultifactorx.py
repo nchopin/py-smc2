@@ -22,7 +22,8 @@
 from __future__ import division
 from numpy import random, power, sqrt, exp, zeros, \
         ones, mean, average, prod, log, sum, repeat, \
-        array, zeros_like, newaxis
+        array, zeros_like, newaxis, argsort, cumsum, \
+        searchsorted
 from numpy import sum as numpysum
 from scipy.stats import norm, truncnorm, gamma
 import scipy.weave as weave
@@ -56,7 +57,6 @@ from snippets.localfolder import get_path
 # parameters[6, :] = w(1)
 # parameters[7, :] = rho(1)
 # parameters[8, :] = rho(2)
-#
 #
 # states[:, 0] = v
 # states[:, 1] = v(1)
@@ -184,10 +184,34 @@ modelx = SSM("SV multi-factor", xdimension = 5, ydimension = 1)
 modelx.setFirstStateGenerator(firstStateGenerator)
 modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
-# Values used to generate the synthetic dataset when needed:
-# (untransformed parameters)
-# stupid values in this case, we don't simulate datasets from this model anyway
-modelx.parameters = array([0, 0, 0., 0., 0., 0, 0., 0., 0.])
+modelx.addStateFiltering()
+modelx.addStatePrediction()
+modelx.addObsPrediction()
+def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros(3)
+    observations = zeros(Nx * Ntheta)
+    weightobs = zeros(Nx * Ntheta)
+    for j in range(Ntheta):
+        observations[(Nx * j):(Nx * (j+1))] = \
+                observationGenerator(xparticles[..., j], thetaparticles[:, j]).reshape(Nx)
+        weightobs[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
+    observations = power(observations, 2)
+    weightobs = weightobs / sum(weightobs)
+    obsmean = average(observations, weights = weightobs)
+    ind = argsort(observations)
+    observations = observations[ind]
+    weightobs = weightobs[ind]
+    cumweightobs = cumsum(weightobs)
+    quantile5 = observations[searchsorted(cumweightobs, 0.05)]
+    quantile95 = observations[searchsorted(cumweightobs, 0.95)]
+    result[0] = obsmean
+    result[1] = quantile5
+    result[2] = quantile95
+    return result
+modelx.addPredictionList([{"function": predictionSquaredObservations, "dimension": 3, "name": "squaredobs"}])
+
 
 
 

@@ -89,17 +89,14 @@ else:
 userfile.T = min(userfile.T, xmodule.modelx.model_obs.shape[0])
 print "using %i observations out of %i..." % (userfile.T, xmodule.modelx.model_obs.shape[0])
 model_obs = xmodule.modelx.model_obs[0:userfile.T]
-if xmodule.modelx.model_states != "unknown":
+if hasattr(xmodule.modelx, "model_states"):
     truestates = xmodule.modelx.model_states[0:userfile.T]
-else:
-    truestates = xmodule.modelx.model_states
 
 
 ### hyperparameters might depend on the data
 thetamodule.modeltheta.hyperparameters = thetamodule.modeltheta.updateHyperParam(thetamodule.modeltheta.hyperparameters, model_obs)
 
-model = {"modelx": xmodule.modelx, "modeltheta": thetamodule.modeltheta, "observations": model_obs, \
-        "truestates": truestates}
+model = {"modelx": xmodule.modelx, "modeltheta": thetamodule.modeltheta, "observations": model_obs}
 
 if len(userfile.SAVINGTIMES) > 0:
     if userfile.METHOD == "adPMCMC":
@@ -210,6 +207,10 @@ if userfile.PROFILING:
     os.remove(tempproffile)
 
 resultsDict = algo.getResults()
+if hasattr(xmodule.modelx, "model_states"):
+    resultsDict.update({"truestates": truestates})
+if hasattr(xmodule.modelx, "parameters"):
+    resultsDict.update({"trueparameters": xmodule.modelx.parameters})
 
 if "cpickle" in userfile.RESULTSFILETYPE:
     import cPickle
@@ -246,7 +247,7 @@ if userfile.GENERATERFILE:
     elif userfile.METHOD == "BSMC":
         from src.plot.plotresultsBSMC import PlotResultsBSMC
         plotter = PlotResultsBSMC(resultsfolder, RDatafile)
-    plotter.setParameters(thetamodule.modeltheta.parameternames)
+    plotter.setParameterNames(thetamodule.modeltheta.parameternames)
     plotter.setModelTheta(thetamodule.modeltheta)
     plotter.setModelX(xmodule.modelx)
     plotter.everything()

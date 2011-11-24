@@ -36,6 +36,8 @@ class SSM:
         self.excludedobservations = []
         self.filteringlist = []
         self.predictionlist = []
+    def setParameters(self, parameters):
+        self.parameters = parameters
     def setFirstStateGenerator(self, function):
         self.firstStateGenerator = function
     def setVectorTransition(self, function):
@@ -129,6 +131,4 @@ def predtmp%(idim)i(xparticles, thetaweights, thetaparticles, t):
         hiddenstatefile = filename.replace(".R", "-states.R")
         if os.path.exists(hiddenstatefile):
             self.model_states = genfromtxt(hiddenstatefile)
-        else:
-            self.model_states = "unknown"
 

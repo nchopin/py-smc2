@@ -10,8 +10,8 @@ cat("working with file", resultsfile, "...
 load(file = resultsfile)
 dlm <- list("FF" = 1, "GG" = 0.8, "V" = 0.25, "W" = 0.25,
              "m0" = 0, "C0" = 1)
-POSTERIOR <- FALSE
-FILTERING <- TRUE
+POSTERIOR <- TRUE
+FILTERING <- FALSE
 KF <- function(observations, somedlm){
   T <- length(observations)
   m <- rep(0, T + 1); C <- rep(1, T + 1)

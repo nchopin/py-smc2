@@ -26,18 +26,18 @@
 # Once you've chosen the paramerers, launch the script "launch.py" by typing
 # :~$ python launch.py
 
-RANDOMSEED = False
+RANDOMSEED = True
 ##
-MODEL = "SVmultifactor"
-T = 15
-DATASET = "SP500recent"
+MODEL = "locallevel"
+T = 10
+DATASET = "synthetic"
 METHOD = "SMC2"
 ##
 GENERATERFILE = True
-PLOT = True
+PLOT = False
 ##
-NTHETA = 200
-NX = 100
+NTHETA = 1000
+NX = 250
 DYNAMICNX = True
 PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
@@ -49,7 +49,7 @@ NBMOVES = 1
 ##
 NSOPF = 100000
 ##
-NBSMC = 50000
+NBSMC = 100000
 BSMCsmooth = 0.1
 ##
 NPMCMC = 200
@@ -82,7 +82,7 @@ RESULTSFILETYPE = ["RData"]
 ### Models and datasets options
 # MODEL is a string, there has to be files named MODELx.py and MODELtheta.py
 # in the models/ subfolder. Provided models are: 
-# - hiddenAR: most basic linear gaussian SSM
+# - simplestmodel: most basic linear gaussian SSM
 # - locallevel: basic linear gaussian SSM
 # - thetalogistic: population model with non linear hidden process (Polansky's parameterization)
 # - periodic: highly non linear model from Gordon Salmond and Smith

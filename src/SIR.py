@@ -31,7 +31,7 @@ from scipy.stats import norm
 from resampling import IndResample
 import time
 
-class SingleSIR:
+class SIR:
     """
     This class launches a SMC filter with Nx particles
     for a single theta parameter.

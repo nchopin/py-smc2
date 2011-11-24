@@ -34,13 +34,9 @@ class ParameterModel:
         print 'creating parameter model "%s"' % name
         self.name = name
         self.parameterdimension = dimension 
-        self.plottingInstructions = []
         def update(hyperparameters, observations):
             return hyperparameters
         self.updateHyperParam = update
-        self.additionalPlots = ""
-    def setRtruevalues(self, truevalues):
-        self.truevalues = truevalues
     def setRprior(self, Rfunctionlist):
         self.Rprior = Rfunctionlist
     def setParameterNames(self, names):

@@ -79,7 +79,7 @@ modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 # Values used to generate the synthetic dataset when needed:
 # (untransformed parameters)
-modelx.parameters = array([0.5, 0.1])
+modelx.setParameters(array([0.5, 0.1]))
 modelx.addStateFiltering()
 modelx.addStatePrediction()
 modelx.addObsPrediction()
