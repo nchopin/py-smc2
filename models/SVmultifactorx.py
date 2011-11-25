@@ -80,12 +80,13 @@ RHO2 = 8
 
 def firstStateGenerator(parameters, size):
     first_state = zeros((size, 5))
-    first_state[:, 2] = random.gamma(size = size, shape = parameters[6] * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
-    first_state[:, 4] = random.gamma(size = size, shape = (1 - parameters[6]) * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
+    first_state[:, 2] = random.gamma(size = size, \
+            shape = parameters[6] * (parameters[2]**2) / parameters[3], \
+            scale = (parameters[3] / parameters[2]))
+    first_state[:, 4] = random.gamma(size = size, \
+            shape = (1 - parameters[6]) * (parameters[2]**2) / parameters[3], \
+            scale = (parameters[3] / parameters[2]))
     return first_state
-def observationGenerator(states, parameters):
-## not implemented
-    return random.normal(size = states.shape[0], loc = 0, scale = 1)
 
 def subtransitionAndWeight(states, y, parameters, alluniforms1, allK1, alluniforms2, allK2):
     code = \
@@ -158,17 +159,18 @@ def transitionAndWeight(states, y, parameters, t):
     Ntheta = states.shape[2]
     weights = zeros((Nx, Ntheta))
     newstates = zeros_like(states)
-    # --------------
     poissonparameters1 = parameters[W1, :] * parameters[LAMBDA1, :] * (parameters[XI, :]**2) / parameters[OMEGA2, :]
     poissonparameters2 = (1 - parameters[W1, :]) * (parameters[LAMBDA1, :] + parameters[LAMBDADIFF, :]) * \
                                                     (parameters[XI, :]**2) / parameters[OMEGA2, :]
     poissonparameters1 = repeat(poissonparameters1[:,newaxis], Nx, axis = 1)
     poissonparameters2 = repeat(poissonparameters2[:,newaxis], Nx, axis = 1)
     for indextheta in range(Ntheta):
-        allK1 = random.poisson(lam = poissonparameters1[indextheta,:])
+        allK1 = array(random.poisson(lam = poissonparameters1[indextheta,:])).reshape(Nx)
+        allK1[allK1 > 10**4] = 10**4
         allK1 = array(allK1).reshape(Nx)
         sumK1 = numpysum(allK1)
-        allK2 = random.poisson(lam = poissonparameters2[indextheta,:])
+        allK2 = array(random.poisson(lam = poissonparameters2[indextheta,:])).reshape(Nx)
+        allK2[allK2 > 10**4] = 10**4
         allK2 = array(allK2).reshape(Nx)
         sumK2 = numpysum(allK2)
         alluniforms1 = random.uniform(size = 2 * sumK1)
@@ -177,40 +179,13 @@ def transitionAndWeight(states, y, parameters, t):
                          alluniforms1, allK1, alluniforms2, allK2)
         newstates[..., indextheta] = subresults["states"]
         weights[..., indextheta] = subresults["weights"]
-    # --------------
     return {"states": newstates , "weights": weights}
 
 modelx = SSM("SV multi-factor", xdimension = 5, ydimension = 1)
 modelx.setFirstStateGenerator(firstStateGenerator)
-modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 modelx.addStateFiltering()
 modelx.addStatePrediction()
-modelx.addObsPrediction()
-def predictionSquaredObservations(xparticles, thetaweights, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros(3)
-    observations = zeros(Nx * Ntheta)
-    weightobs = zeros(Nx * Ntheta)
-    for j in range(Ntheta):
-        observations[(Nx * j):(Nx * (j+1))] = \
-                observationGenerator(xparticles[..., j], thetaparticles[:, j]).reshape(Nx)
-        weightobs[(Nx * j):(Nx * (j+1))] = repeat(thetaweights[j], repeats = Nx)
-    observations = power(observations, 2)
-    weightobs = weightobs / sum(weightobs)
-    obsmean = average(observations, weights = weightobs)
-    ind = argsort(observations)
-    observations = observations[ind]
-    weightobs = weightobs[ind]
-    cumweightobs = cumsum(weightobs)
-    quantile5 = observations[searchsorted(cumweightobs, 0.05)]
-    quantile95 = observations[searchsorted(cumweightobs, 0.95)]
-    result[0] = obsmean
-    result[1] = quantile5
-    result[2] = quantile95
-    return result
-modelx.addPredictionList([{"function": predictionSquaredObservations, "dimension": 3, "name": "squaredobs"}])
 
 
 

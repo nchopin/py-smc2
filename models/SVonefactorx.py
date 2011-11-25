@@ -112,12 +112,7 @@ def transitionAndWeight(states, y, parameters, t):
     Ntheta = states.shape[2]
     weights = zeros((Nx, Ntheta))
     newstates = zeros_like(states)
-    # --------------
     poissonparameters = parameters[4, :] * (parameters[2, :]**2) / parameters[3, :]
-    #poissonparameters = repeat(poissonparameters[:,newaxis], Nx, axis = 1)
-    #print "\n", poissonparameters.shape
-    #print poissonparameters[0:10, 0:10]
-    #raw_input("Press ENTER to exit")
     for indextheta in range(Ntheta):
         #print poissonparameters[indextheta,:]
         #allK = random.poisson(lam = poissonparameters[indextheta,:], size = Nx)
@@ -138,7 +133,6 @@ def transitionAndWeight(states, y, parameters, t):
                          alluniforms, allK)
         newstates[..., indextheta] = subresults["states"]
         weights[..., indextheta] = subresults["weights"]
-    # --------------
     return {"states": newstates , "weights": weights}
 
 modelx = SSM("SV one-factor", xdimension = 2, ydimension = 1)

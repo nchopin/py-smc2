@@ -28,13 +28,13 @@
 
 RANDOMSEED = True 
 ##
-MODEL = "SVfixedrho"
-T = 100
-DATASET = "SP500recent"
+MODEL = "SVonefactor"
+T = 1000
+DATASET = "synthetic"
 METHOD = "SMC2"
 ##
 GENERATERFILE = True
-PLOT = True
+PLOT = False
 ##
 NTHETA = 1000
 NX = 100
@@ -57,8 +57,8 @@ TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
 #SAVINGTIMES = [250]
-#SAVINGTIMES = [250, 500]
-SAVINGTIMES = []
+SAVINGTIMES = [250, 500, 750]
+#SAVINGTIMES = []
 SMOOTHING = False
 FILTERING = True
 PREDICTION = True
@@ -66,9 +66,9 @@ SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 ##
 PROFILING = True
-RESULTSFILENAME = "temp"
-REPLACEFILE = True
-USESUBFOLDERS = False
+RESULTSFILENAME = ""
+REPLACEFILE = False
+USESUBFOLDERS = True
 RESULTSFILETYPE = ["RData"]
 
 ##################################################################

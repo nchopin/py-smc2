@@ -68,12 +68,13 @@ from snippets.localfolder import get_path
 
 def firstStateGenerator(parameters, size):
     first_state = zeros((size, 5))
-    first_state[:, 2] = random.gamma(size = size, shape = parameters[6] * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
-    first_state[:, 4] = random.gamma(size = size, shape = (1 - parameters[6]) * (parameters[2]**2) / parameters[3], scale = (parameters[3] / parameters[2]))
+    first_state[:, 2] = random.gamma(size = size, \
+            shape = parameters[6] * (parameters[2]**2) / parameters[3], \
+            scale = (parameters[3] / parameters[2]))
+    first_state[:, 4] = random.gamma(size = size, \
+            shape = (1 - parameters[6]) * (parameters[2]**2) / parameters[3], \
+            scale = (parameters[3] / parameters[2]))
     return first_state
-def observationGenerator(states, parameters):
-## not implemented
-    return random.normal(size = states.shape[0], loc = 0, scale = 1)
 
 def subtransitionAndWeight(states, y, parameters, alluniforms1, allK1, alluniforms2, allK2):
     code = \
@@ -135,7 +136,8 @@ def subtransitionAndWeight(states, y, parameters, alluniforms1, allK1, allunifor
     y = array([y])
     Nx = states.shape[0]
     weights = zeros(Nx)
-    weave.inline(code,['Nx', 'states', 'y', 'parameters', 'weights', 'alluniforms1', 'allK1', 'alluniforms2', 'allK2'], \
+    weave.inline(code,['Nx', 'states', 'y', 'parameters', 'weights', 'alluniforms1', \
+            'allK1', 'alluniforms2', 'allK2'], \
             type_converters=weave.converters.blitz, libraries = ["m"])
     return {"states": states , "weights": weights}
 
@@ -145,34 +147,33 @@ def transitionAndWeight(states, y, parameters, t):
     Ntheta = states.shape[2]
     weights = zeros((Nx, Ntheta))
     newstates = zeros_like(states)
-    # --------------
     poissonparameters1 = parameters[6, :] * parameters[4, :] * (parameters[2, :]**2) / parameters[3, :]
-    poissonparameters2 = (1 - parameters[6, :]) * (parameters[4, :] + parameters[5, :]) * (parameters[2, :]**2) / parameters[3, :]
+    poissonparameters2 = (1 - parameters[6, :]) * (parameters[4, :] + \
+            parameters[5, :]) * (parameters[2, :]**2) / parameters[3, :]
     poissonparameters1 = repeat(poissonparameters1[:,newaxis], Nx, axis = 1)
     poissonparameters2 = repeat(poissonparameters2[:,newaxis], Nx, axis = 1)
     for indextheta in range(Ntheta):
-        allK1 = random.poisson(lam = poissonparameters1[indextheta,:])
+        allK1 = array(random.poisson(lam = array(poissonparameters1[indextheta,:]))).reshape(Nx)
+        allK1[allK1 > 10**4] = 10**4
         allK1 = array(allK1).reshape(Nx)
-        sumK1 = sum(allK1)
-        allK2 = random.poisson(lam = poissonparameters2[indextheta,:])
+        sumK1 = numpysum(allK1)
+        allK2 = array(random.poisson(lam = poissonparameters2[indextheta,:])).reshape(Nx)
+        allK2[allK2 > 10**4] = 10**4
         allK2 = array(allK2).reshape(Nx)
-        sumK2 = sum(allK2)
+        sumK2 = numpysum(allK2)
         alluniforms1 = random.uniform(size = 2 * sumK1)
         alluniforms2 = random.uniform(size = 2 * sumK2)
         subresults = subtransitionAndWeight(states[..., indextheta], y, parameters[:, indextheta], \
                          alluniforms1, allK1, alluniforms2, allK2)
         newstates[..., indextheta] = subresults["states"]
         weights[..., indextheta] = subresults["weights"]
-    # --------------
     return {"states": newstates , "weights": weights}
 
 modelx = SSM("SV multi-factor", xdimension = 5, ydimension = 1)
 modelx.setFirstStateGenerator(firstStateGenerator)
-modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
 modelx.addStateFiltering()
 modelx.addStatePrediction()
-modelx.addObsPrediction()
 
 
 

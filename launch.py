@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 ###################################################
 #    This file is part of py-smc2.
 #    http://code.google.com/p/py-smc2/
@@ -16,8 +18,6 @@
 #    along with py-smc2.  If not, see <http://www.gnu.org/licenses/>.
 ###################################################
 
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
 
 from __future__ import division
 import os, os.path, imp, sys, shutil
@@ -29,16 +29,35 @@ from src.sopf import SOPF
 from src.bsmc import BSMC
 from src.adpmcmc import AdaptivePMCMC
 from snippets.localfolder import get_path
-import userfile as userfile
 
-userfilefile = open("userfile.py", "r")
+nargs = len(sys.argv)
+if nargs == 1:
+    print "using default user file ('userfile.py' in the root folder)..."
+    userfilepath = "userfile.py"
+if nargs == 2:
+    userfilepath = sys.argv[1]
+    print "working with user file %s" % userfilepath 
+if nargs > 2:
+    raise ValueError, "stop: too many arguments; you should only specify a path to a user file"
+
+THISPATH = get_path()
+userfilefolder =  os.path.join(THISPATH, os.path.dirname(userfilepath))
+userfilebasename = os.path.basename(userfilepath)
+userfilebasename = userfilebasename.replace(".py", "")
+sys.path.append(userfilefolder)
+f, filename, description = imp.find_module(userfilebasename)
+userfile = imp.load_module("userfile", f, filename, description)
+
+
+
+#import userfile as userfile
+
+userfilefile = open(os.path.join(THISPATH, userfilepath), "r")
 userfilecontent = userfilefile.read()
 userfilefile.close()
 
 if not(userfile.RANDOMSEED):
     random.seed(127)
-
-THISPATH = get_path()
 
 xmodulename = userfile.MODEL + "x"
 thetamodulename = userfile.MODEL + "theta"

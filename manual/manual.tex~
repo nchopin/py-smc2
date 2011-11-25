@@ -97,8 +97,9 @@ Also it requires the following:
 \begin{itemize}
  \item \texttt{numpy}, \texttt{scipy} (usually packaged as \texttt{python-numpy}, \texttt{python-scipy}),
  \item The package makes extensive use of \texttt{scipy.weave}, in particular of the function inline. It is installed along with \texttt{scipy}. However for it to work you also 
-need a C compiler like \texttt{gcc}. Hence make sure you have the latest version of \texttt{gcc}.
- \item \texttt{Rpy2} does not hurt but is not required (mainly if you have it installed, something at some point will be computed quicker),
+need a C compiler like \texttt{gcc}. Hence make sure you have the latest version of \texttt{gcc}. Mac OS user should consider installing XCode.
+ \item \texttt{Rpy2} does not hurt but is not required (mainly if you have it installed, something at some point will be performed quicker),
+ \item \texttt{cProfile} it is a profiler for python, usually installed along with python,  and it is only required if the profiling option is enabled.
  \item \texttt{R} is required for the graphs, but you can disable the graph part (see the \texttt{PLOT} option, in the next section). 
 The \texttt{ggplot2} package is also required, so once you've installed \texttt{R}, install this package by launching:
 \begin{lstlisting}
@@ -136,6 +137,8 @@ algorithmic parameters. The important ones are the following:
  \item \texttt{MODEL}: it should be a string indicating a state-space model. Each model has two files in the \texttt{models} subfolder. For instance
 \texttt{locallevel} is described by \texttt{locallevelx.py} and \texttt{localleveltheta.py}. The list of models currently available is:
 \begin{itemize}
+ \item \texttt{hiddenAR} : a simple linear gaussian model with one parameter: the coefficient of the auto-regressive hidden process. The variance of its noise
+and the variance of the observational noise are fixed and considered known.
  \item \texttt{locallevel} : a simple local level model with two parameters: the variance of the hidden random walk, and the variance of the measurement function.
  \item \texttt{periodic}: a non-linear gaussian model as in Gordon, Salmond and Smith 1993.
  \item \texttt{athletics}: the model used in the paper for modelling athletics records (with a GEV measurement function and a second order random walk for the hidden process)
@@ -180,6 +183,8 @@ and if \texttt{PLOT} is enabled, then the \texttt{R} file is launched at the end
 The other parameters in \texttt{userfile.py} are pretty self-explanatory. Some are used only if some other method is used (\texttt{SOPF}, \texttt{BSMC}, \texttt{adPMCMC}).
 Some would deserve explanations in a future version of this manual (like \texttt{SMOOTHING}, or \texttt{PREDICTION}).
 
+Some user files than the default one are provided in the \texttt{userfiles/} subfolder.
+
 \subsection{Launching the program}
 
 Once the user file is set-up, how to launch it? First make sure you saved the user file (its name should be \texttt{userfile.py}) if you made any change to it.
@@ -191,7 +196,16 @@ Then launch a terminal, go in the root folder of the package and type
 \end{lstlisting}
 \end{center}
 
-The file \texttt{launch.py} should not be modified: only \texttt{userfile.py} should be changed. The file \texttt{launch.py} basically analyses \texttt{userfile.py}, and then call the right functions in the right order. These core functions are in the \texttt{src} subfolder, but shouldn't be modified or called directly in most cases. The user file is made precisely so that the user does not have to handle the core functions.
+The file \texttt{launch.py} should not be modified: only \texttt{userfile.py} should be changed. The file \texttt{launch.py} basically analyses \texttt{userfile.py}, and then calls the appropriate functions in the right order. These core functions are in the \texttt{src} subfolder, but shouldn't be modified or called directly in most cases. The user file is made precisely so that the user does not have to handle the core functions.
+
+Note that you can name your user file the way you want and put in the folder you want. Suppose that you saved your userfile as \texttt{myuserfile.py} in
+the folder \texttt{/mydocuments/}, then you can launch the program on your file with the path to the user file as an argument of the program:
+\begin{center}
+ \begin{lstlisting}
+ python launch.py /mydocuments/myuserfile.py
+\end{lstlisting}
+\end{center}
+This makes it easy to store user files without having to move and rename them each time you want to launch them.
 
 During the program you are able to follow the algorithm's progression. If you set up the parameters so that it should be fast (small \texttt{T}, small \texttt{NTHETA}, small \texttt{NX}), then it should take a few seconds. For bigger parameters values, the program can take hours (for any of the proposed methods), so be sure that you set up
 the parameters right before launching. The computing time can also be very different from one model to the other (the stochastic volatility models being the slowest of the proposed models).
@@ -202,7 +216,7 @@ The \pysmc package is organized as follows:
 \begin{itemize}
  \item the root folder contains mainly \texttt{userfile.py} and \texttt{launch.py}. The user file is the one file that should be modified by most users.
 The launch file is there to be executed but not modified.
- \item \texttt{data} subfolder: where the data sets should be. There are the files finishing by \texttt{.R}. There are not actually \texttt{R} code files
+ \item \texttt{data} subfolder: where the data sets should be. There are the files finishing by \texttt{.R}. These are not actually \texttt{R} code files
 but simple text files with one value per line. Open \texttt{anisus.R} or \texttt{nutria.R} for simplest examples. If you want to add a new data set,
 add a file in this subfolder, with the \texttt{.R} file extension. You can then specify it in the \texttt{DATASET} entry of the user file (without the extension), as we saw earlier. For example, if you add \texttt{foo.R} in the \texttt{data} subfolder, put \texttt{DATASET = "foo"} in the user file.
  \item \texttt{manual} subfolder: where this manual is.

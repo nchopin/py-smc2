@@ -5,7 +5,6 @@
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
 
  - faire du menage dans le fichier userfile (commentaires etc)
- - (uniquement ensuite) dossier userfile templates
  - mettre a jour le manuel d'utilisation
 
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
@@ -14,16 +13,12 @@
  - SMCN: etude de variance: tracer des trajectoires d'estimateurs Zhat, voir si ca s'effondre
  - SMCN: faire un vrai intervalle de confiance et pas un intervalle qui prend des val negatives !!
 
-- guessAcceptrate: *in progress* -> abandon
+- guessAcceptrate: *in progress* -> abandon?
 
 - comparer influence de NBMOVES
 - comparer evidence entre BSMC et SMC2
 
-- faire en sorte qu'on puisse ne pas specifier la fonction observationGenerator!!
-
 - "rehabiliter" le modele athletics
 
-- mettre le nom d'acces vers userfile.py en argument de python launch.py
-comme ca on pourrait faire 
-python launch.py userfile1.py && python launch.py userfile2.py (pas besoin de modifier launch.py)
+- faire script pour uploader automatiquement l'archive sur google code
 
