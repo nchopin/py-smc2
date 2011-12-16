@@ -28,9 +28,9 @@
 
 RANDOMSEED = True 
 ##
-MODEL = "SVfixedrho"
+MODEL = "athletics"
 T = 100
-DATASET = "SP500recent"
+DATASET = "athletics-best-two"
 METHOD = "SMC2"
 ##
 GENERATERFILE = True
@@ -56,19 +56,17 @@ NPMCMC = 200
 TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
-#SAVINGTIMES = [250]
-#SAVINGTIMES = [250, 500]
 SAVINGTIMES = []
 SMOOTHING = False
-FILTERING = True
-PREDICTION = True
+FILTERING = False
+PREDICTION = False
 SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 ##
 PROFILING = True
-RESULTSFILENAME = "temp"
-REPLACEFILE = True
-USESUBFOLDERS = False
+RESULTSFILENAME = ""
+REPLACEFILE = False
+USESUBFOLDERS = True
 RESULTSFILETYPE = ["RData"]
 
 ##################################################################

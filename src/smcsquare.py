@@ -265,13 +265,12 @@ class SMCsquare:
                 self.resamplingindices.append(t)
                 self.ESS[t] = ESSfunction(exp(self.thetalogweights[t, :]))
                 for move in range(self.AP["nbmoves"]):
-#                    if self.AP["proposalkernel"] == "independent":
-#                        self.guessAcceptrate()
                     self.PMCMCstep(t)
                     acceptrate = self.acceptratios[-1]
                     progressbar(t / (self.T - 1), text = \
                             " \nresample move step at iteration = %i - acceptance rate: %.3f\n" % (t, acceptrate))
-                    if self.acceptratios[-1] < self.AP["dynamicNxThreshold"] and self.Nx <= (self.AP["NxLimit"] / 2) \
+                    if self.acceptratios[-1] < self.AP["dynamicNxThreshold"] \
+                            and self.Nx <= (self.AP["NxLimit"] / 2) \
                             and self.AP["dynamicNx"]:
                         self.increaseParticlesNb(t)
                         self.ESS[t] = ESSfunction(exp(self.thetalogweights[t, :]))
@@ -300,6 +299,12 @@ class SMCsquare:
                     exp(self.thetalogweights[t - 1,:]), self.thetaparticles, t)
     def smoothing(self, t):
         print "\nsmoothing time"
+        ########
+        ###
+        ### there is a problem here
+        ### the smoothing involves an x-change step 
+        ### and hence the theta particles should be reweighted
+        ### which is not the case here...!! 
         from SIR import SIR
         smoothedx = zeros((t+1, self.statedimension, self.Ntheta))
         randomindices = random.randint(low = 0, high = self.Nx, size = self.Ntheta)
@@ -319,6 +324,7 @@ class SMCsquare:
                 if subt == self.storesmoothingtime:
                     self.smoothedvalues[smoothkey][:] = tempmean
         print "smoothing done!"
+
     def computeCovarianceAndMean(self, t):
         X = transpose(self.transformedthetaparticles)
         w = exp(self.thetalogweights[t, :])

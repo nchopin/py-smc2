@@ -13,8 +13,6 @@
  - SMCN: etude de variance: tracer des trajectoires d'estimateurs Zhat, voir si ca s'effondre
  - SMCN: faire un vrai intervalle de confiance et pas un intervalle qui prend des val negatives !!
 
-- guessAcceptrate: *in progress* -> abandon?
-
 - comparer influence de NBMOVES
 - comparer evidence entre BSMC et SMC2
 
@@ -22,3 +20,5 @@
 
 - faire script pour uploader automatiquement l'archive sur google code
 
+- fix smoothing: when xchange step is done at the end, the theta-weights need to be updated
+- ajouter les temps 400, 410 pour le SV sur donnees simulees

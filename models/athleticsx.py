@@ -55,12 +55,7 @@ def firstStateGenerator(parameters, size):
     first_state = zeros((size, 2))
     first_state[:, 0] = random.normal(size = size, loc = 520, scale = 10)
     return first_state
-def observationGenerator(states, parameters):
-    return random.normal(size = states.shape[0])
-
 def transitionAndWeight(states, y, parameters, t):
-    #print y.shape
-    #raw_input("y.shape OK?")
     Nx = states.shape[0]
     Ntheta = states.shape[2]
     noise = random.multivariate_normal(size = (Nx, Ntheta), mean = zeros(2), cov = [[1/3, 0.5], [0.5, 1]])
@@ -99,53 +94,50 @@ def transitionAndWeight(states, y, parameters, t):
 
 modelx = SSM("Athletics records", xdimension = 2, ydimension = 1)
 modelx.setFirstStateGenerator(firstStateGenerator)
-modelx.setObservationGenerator(observationGenerator)
 modelx.setTransitionAndWeight(transitionAndWeight)
-# Values used to generate the synthetic dataset when needed:
-# (untransformed parameters) 
-# (in this example it's never used)
-modelx.parameters = array([0, 0, 0])
 modelx.excludedobservations = [17]
-def firststate(xparticles, thetaparticles, t):
-    return xparticles[:, 0, :]
-def CIlow(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    tempvalue = log(1 - 0.025)
-    for j in range(Ntheta):
-        result[:,j] = xparticles[:, 0, j] - thetaparticles[2, j] / thetaparticles[1, j] * (1 - (- tempvalue)**(+thetaparticles[1, j]))
-    return result
-def CIhigh(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    tempvalue = log(1 - 0.975)
-    for j in range(Ntheta):
-        result[:, j] = xparticles[:, 0, j] - thetaparticles[2, j] / thetaparticles[1, j] * (1 - (- tempvalue)**(+thetaparticles[1, j]))
-    return result
-def beat1985(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    for j in range(Ntheta):
-        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
-        inner1985 = maximum(0, 1 - xioversigma * (502.62 - xparticles[:, 0, j]))
-        beat1985 = 1 - exp(-(inner1985) ** (+1 / thetaparticles[1, j]))
-        result[:, j] = beat1985 
-    return result
-def beat1993(xparticles, thetaparticles, t):
-    Nx = xparticles.shape[0]
-    Ntheta = xparticles.shape[2]
-    result = zeros((Nx, Ntheta))
-    for j in range(Ntheta):
-        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
-        inner1993 = maximum(0, 1 - xioversigma * (486.11 - xparticles[:, 0, j]))
-        beat1993 = 1 - exp(-(inner1993) ** (+1 / thetaparticles[1, j]))
-        result[:, j] = beat1993 
-    return result
 
-modelx.functionals = {"firststate": firststate, "CIlow": CIlow, "CIhigh": CIhigh, \
-        "beat1985": beat1985, "beat1993": beat1993}
+###### old functions passed to the old filtering system
+#def firststate(xparticles, thetaparticles, t):
+#    return xparticles[:, 0, :]
+#def CIlow(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    tempvalue = log(1 - 0.025)
+#    for j in range(Ntheta):
+#        result[:,j] = xparticles[:, 0, j] - thetaparticles[2, j] / thetaparticles[1, j] * (1 - (- tempvalue)**(+thetaparticles[1, j]))
+#    return result
+#def CIhigh(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    tempvalue = log(1 - 0.975)
+#    for j in range(Ntheta):
+#        result[:, j] = xparticles[:, 0, j] - thetaparticles[2, j] / thetaparticles[1, j] * (1 - (- tempvalue)**(+thetaparticles[1, j]))
+#    return result
+#def beat1985(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    for j in range(Ntheta):
+#        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
+#        inner1985 = maximum(0, 1 - xioversigma * (502.62 - xparticles[:, 0, j]))
+#        beat1985 = 1 - exp(-(inner1985) ** (+1 / thetaparticles[1, j]))
+#        result[:, j] = beat1985 
+#    return result
+#def beat1993(xparticles, thetaparticles, t):
+#    Nx = xparticles.shape[0]
+#    Ntheta = xparticles.shape[2]
+#    result = zeros((Nx, Ntheta))
+#    for j in range(Ntheta):
+#        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
+#        inner1993 = maximum(0, 1 - xioversigma * (486.11 - xparticles[:, 0, j]))
+#        beat1993 = 1 - exp(-(inner1993) ** (+1 / thetaparticles[1, j]))
+#        result[:, j] = beat1993 
+#    return result
+#
+#modelx.functionals = {"firststate": firststate, "CIlow": CIlow, "CIhigh": CIhigh, \
+#        "beat1985": beat1985, "beat1993": beat1993}
 
 
