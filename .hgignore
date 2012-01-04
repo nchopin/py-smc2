@@ -1,4 +1,7 @@
 syntax: glob
+finalplots
+finalplots/
+finalplots/*
 ^prof*
 prof
 test*R
