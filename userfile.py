@@ -28,10 +28,10 @@
 
 RANDOMSEED = True 
 ##
-MODEL = "athletics"
-T = 100
-DATASET = "athletics-best-two"
-METHOD = "SMC2"
+MODEL = "locallevel"
+T = 10
+DATASET = "synthetic"
+METHOD = "BSMC"
 ##
 GENERATERFILE = True
 PLOT = True
@@ -57,16 +57,15 @@ TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
 SAVINGTIMES = []
-SMOOTHING = False
-FILTERING = False
-PREDICTION = False
+FILTERING = True
+PREDICTION = True
 SMOOTHINGTIMES = []
 STORESMOOTHINGTIME = 0
 ##
 PROFILING = True
-RESULTSFILENAME = ""
-REPLACEFILE = False
-USESUBFOLDERS = True
+RESULTSFILENAME = "temp"
+REPLACEFILE = True
+USESUBFOLDERS = False
 RESULTSFILETYPE = ["RData"]
 
 ##################################################################
