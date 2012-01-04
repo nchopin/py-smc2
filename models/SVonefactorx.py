@@ -53,7 +53,6 @@ from snippets.localfolder import get_path
 # parameters[3, :] = omega^2
 # parameters[4, :] = lambda
 # 0 0 0.5 0.0625 0.01
-# lambda * xi^2 / omega^2 = 0.01 * 0.25 / (0.0625) = 0.04
 ############################################
 
 ### these functions take untransformed parameters as arguments

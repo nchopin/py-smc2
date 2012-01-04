@@ -4,7 +4,6 @@
 
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
 
- - faire du menage dans le fichier userfile (commentaires etc)
  - mettre a jour le manuel d'utilisation
 
 -»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»--»-»-
@@ -16,9 +15,6 @@
 - comparer influence de NBMOVES
 - comparer evidence entre BSMC et SMC2
 
-- "rehabiliter" le modele athletics
-
 - faire script pour uploader automatiquement l'archive sur google code
-
 - fix smoothing: when xchange step is done at the end, the theta-weights need to be updated
 - ajouter les temps 400, 410 pour le SV sur donnees simulees

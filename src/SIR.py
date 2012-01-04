@@ -52,18 +52,19 @@ class SIR:
         self.savingtimes = savingtimes
         self.storall = storall
         if self.storall:
-            self.savingtimes = range(T)
+            self.savingtimes = range(self.T + 1)
             self.lineage = zeros((Nx, self.T), dtype = int32)
         if len(self.savingtimes) > 0:
             self.alreadystored = 0
             if not (0 in self.savingtimes):
                 self.savingtimes.append(0)
             self.savingtimes.sort()
-            self.xhistory = zeros((Nx, self.statedimension, len(self.savingtimes)))
+            self.xhistory = zeros((Nx, self.statedimension, len(self.savingtimes) + 1))
         self.xparticles = zeros((Nx, self.statedimension))
         self.xweights = zeros(Nx)
         self.logxweights = zeros(Nx)
         self.constants = zeros(self.T)
+        self.totalLogLike = 0.
         self.verbose = verbose
         self.meanpath = zeros((self.T, self.statedimension))
         self.computingtimes = zeros(self.T)
@@ -102,8 +103,9 @@ class SIR:
                 self.logxweights[...] -= self.constants[t]
             else:
                 self.logxweights = zeros(self.Nx)
-                self.constants[t] = numpymax(self.logxweights)
             self.xweights[...] = exp(self.logxweights)
+            logLike = log(mean(self.xweights))
+            self.totalLogLike += logLike
             self.xresample(t)
             if ((t+1) in self.savingtimes):
                 self.xhistory[..., self.alreadystored] = self.xparticles
@@ -112,6 +114,11 @@ class SIR:
             new_tic = time.time()
             self.computingtimes[t] = new_tic - last_tic
             last_tic = new_tic
+    def getTotalLogLike(self):
+        csts = numpysum(self.constants)
+        #csts[isnan(csts)] = -(10**150)
+        #csts[isinf(csts)] = -(10**150)
+        return self.totalLogLike + csts
     def retrieveTrajectory(self, particleindex):
         """ 
         return a complete trajectory (starting from t = 0)

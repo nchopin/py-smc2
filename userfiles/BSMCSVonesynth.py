@@ -29,12 +29,12 @@
 RANDOMSEED = True 
 ##
 MODEL = "SVonefactor"
-T = 10
+T = 1000
 DATASET = "synthetic"
 METHOD = "BSMC"
 ##
 GENERATERFILE = True
-PLOT = True
+PLOT = False
 ##
 NTHETA = 1000
 NX = 100
@@ -49,15 +49,14 @@ NBMOVES = 1
 ##
 NSOPF = 100000
 ##
-NBSMC = 10000
+NBSMC = 200000
 BSMCsmooth = 0.1
 ##
 NPMCMC = 200
 TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
-#SAVINGTIMES = [250, 400, 410, 500, 750]
-SAVINGTIMES = []
+SAVINGTIMES = [250, 400, 410, 500, 750]
 SMOOTHING = False
 FILTERING = True
 PREDICTION = True
@@ -67,7 +66,7 @@ STORESMOOTHINGTIME = 0
 PROFILING = True
 RESULTSFILENAME = ""
 REPLACEFILE = False
-USESUBFOLDERS = False
+USESUBFOLDERS = True
 RESULTSFILETYPE = ["RData"]
 
 ##################################################################

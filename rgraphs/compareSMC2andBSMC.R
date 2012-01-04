@@ -6,9 +6,9 @@ source("/home/pierre/Dropbox/py-smc2/rgraphs/plotutils.R")
 
 resultsfolder <- "/home/pierre/Dropbox/py-smc2/results/SVonefactor/synthetic/"
 SMC2Indresultsfile <- paste(resultsfolder, "SMC2-T1000-independent-dynamicNx100-Ntheta1000(", sep = "")
-nrunssmc2 <- 8
+nrunssmc2 <- 5
 BSMCresultsfile <- paste(resultsfolder, "BSMC-T1000-N150000-h0.100(", sep = "")
-nrunsbsmc <- 8
+nrunsbsmc <- 5
 load(file = paste(SMC2Indresultsfile, 0, ").RData", sep = ""))
 TRUEPARAMETERS <- trueparameters
 NBPARAM <- dim(thetahistory)[2]
@@ -88,7 +88,7 @@ print(g)
 
 base <- subset(meanevid, Method == "SMC2")$mean
 head(evid)
-evid$LogEvidMinusBase <- evid$LogEvid - rep(base, 16)
+evid$LogEvidMinusBase <- evid$LogEvid - rep(base, nrunsbsmc + nrunssmc2)
 g <- ggplot(subset(evid, Time < T & Time > 10), 
             aes(x = Time, y = LogEvidMinusBase, colour = Method, linetype = Run))
 # g <- g + facet_wrap(~ Method)

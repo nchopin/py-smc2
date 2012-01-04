@@ -28,16 +28,16 @@
 
 RANDOMSEED = True 
 ##
-MODEL = "athletics"
-T = 100
-DATASET = "athletics-best-two"
-METHOD = "SMC2"
+MODEL = "SVonefactor"
+T = 1000
+DATASET = "synthetic"
+METHOD = "BSMC"
 ##
 GENERATERFILE = True
-PLOT = True
+PLOT = False
 ##
 NTHETA = 1000
-NX = 250
+NX = 100
 DYNAMICNX = True
 PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
@@ -49,19 +49,19 @@ NBMOVES = 1
 ##
 NSOPF = 100000
 ##
-NBSMC = 20000
-BSMCsmooth = 0.1
+NBSMC = 200000
+BSMCsmooth = 0.01
 ##
 NPMCMC = 200
 TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
-SAVINGTIMES = []
-SMOOTHING = True
-FILTERING = False
-PREDICTION = False
-#SMOOTHINGTIMES = []
-STORESMOOTHINGTIME = 17
+SAVINGTIMES = [250, 400, 410, 500, 750]
+SMOOTHING = False
+FILTERING = True
+PREDICTION = True
+SMOOTHINGTIMES = []
+STORESMOOTHINGTIME = 0
 ##
 PROFILING = True
 RESULTSFILENAME = ""
@@ -152,6 +152,7 @@ RESULTSFILETYPE = ["RData"]
 # of subfolder rgraphs/.
 #RESULTSFILETYPE = ["RData", "cpickle"]
 ##########################
+
 
 
 

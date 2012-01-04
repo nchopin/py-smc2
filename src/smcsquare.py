@@ -76,7 +76,6 @@ class SMCsquare:
         self.smoothedmeans = {}
         self.smoothedvalues= {}
         if self.smoothingEnable:
-            self.smoothingtimes = algorithmparameters["smoothingtimes"]
             self.storesmoothingtime = algorithmparameters["storesmoothingtime"]
         ## Prediction
         if self.AP["prediction"]:
@@ -280,7 +279,7 @@ class SMCsquare:
             """ filtering and smoothing """
             if self.AP["filtering"]:
                 self.filtering(t)
-            if self.smoothingEnable and (t in self.smoothingtimes):
+            if self.smoothingEnable and t == self.T - 1:
                 self.smoothing(t)
             if t in self.savingtimes or t == self.T - 1:
                 print "\nsaving particles at time %i" % t
@@ -298,32 +297,36 @@ class SMCsquare:
                 self.predicted[index][t, :] = d["function"](self.xparticles, \
                     exp(self.thetalogweights[t - 1,:]), self.thetaparticles, t)
     def smoothing(self, t):
-        print "\nsmoothing time"
+        print "\n smoothing ..."
         ########
-        ###
-        ### there is a problem here
-        ### the smoothing involves an x-change step 
-        ### and hence the theta particles should be reweighted
-        ### which is not the case here...!! 
         from SIR import SIR
         smoothedx = zeros((t+1, self.statedimension, self.Ntheta))
         randomindices = random.randint(low = 0, high = self.Nx, size = self.Ntheta)
+        newtotalLogLik = zeros(self.Ntheta)
         for indextheta in range(self.Ntheta):
-            singleSIR = SIR(self.Nx, self.thetaparticles[:, indextheta], self.observations[0:(t+1),:], self.modelx)
-            onepath = singleSIR.retrieveTrajectory(randomindices[indextheta])
+            sir = SIR(self.Nx, self.thetaparticles[:, indextheta], \
+                    self.observations[0:(t+1),:], self.modelx, storall = True)
+            newtotalLogLik[indextheta] = sir.getTotalLogLike()
+            onepath = sir.retrieveTrajectory(randomindices[indextheta])
             smoothedx[:, :, indextheta] = onepath[1:(t+2), :]
-        for key in self.modelx.functionals.keys():
+            #print smoothedx[:,:,indextheta]
+            #raw_input()
+        logw = self.thetalogweights[t, :] + newtotalLogLik - self.totalLogLike
+        self.smoothedvalues["weights"] = zeros(self.Ntheta)
+        self.smoothedvalues["weights"][:] = logw
+        for key in self.modelx.smoothingfunctionals.keys():
             smoothkey = key + "%i" % (t + 1)
             self.smoothedmeans[smoothkey] = zeros(t + 1)
             self.smoothedvalues[smoothkey] = zeros(self.Ntheta)
             for subt in range(t + 1):
                 smoothedxt = smoothedx[subt, ...]
-                tempmatrix = self.modelx.functionals[key](smoothedx[newaxis, subt, ...], self.thetaparticles, subt)
+                tempmatrix = self.modelx.smoothingfunctionals[key](smoothedx[newaxis, subt, ...], \
+                                                                   self.thetaparticles, subt)
                 tempmean = mean(tempmatrix, axis = 0)
-                self.smoothedmeans[smoothkey][subt] = average(tempmean, weights = exp(self.thetalogweights[t,:]))
+                self.smoothedmeans[smoothkey][subt] = average(tempmean, weights = exp(logw))
                 if subt == self.storesmoothingtime:
                     self.smoothedvalues[smoothkey][:] = tempmean
-        print "smoothing done!"
+        print "...done!"
 
     def computeCovarianceAndMean(self, t):
         X = transpose(self.transformedthetaparticles)
@@ -345,28 +348,6 @@ class SMCsquare:
         Return the evidence at a given time
         """
         return average(exp(loglike), weights = exp(thetalogweights))
-#    def guessAcceptrate(self):
-#        invSigma = linalg.inv(self.proposalcovmatrix)
-#        def multinorm_logpdf(x):
-#            centeredx = (x - self.proposalmean)
-#            return -0.5 * dot(dot(centeredx, invSigma), centeredx)
-#        logomegas = self.totalLogLike + self.priordensityeval - \
-#                apply_along_axis(func1d = multinorm_logpdf, arr = self.transformedthetaparticles, axis = 0)
-#        w = exp(-logomegas)
-#        w = w / numpysum(w)
-#        #w = ones(self.Ntheta) / self.Ntheta
-#        import matplotlib.pyplot as plt
-#        plt.hist(x = self.transformedthetaparticles[0,:], weights = w, bins = 50, normed=1)
-#        plt.show()
-#        acceptrate = 0.
-#        for k in range(self.Ntheta):
-#            AR = minimum(1, exp(logomegas - logomegas[k]))
-#            acceptrate += sum( w * AR)
-#            #acceptrate += 1 / (self.Ntheta) * (sum(AR) - AR[k])
-#        acceptrate /= self.Ntheta
-#        guessar = acceptrate
-#        print "\nI'm guessing the next acceptance rate will be ~ %.1f %%" % (guessar * 100)
-#        self.guessacceptratios.append(guessar)
     def getResults(self):
         """
         Return a dictionary with vectors of interest.

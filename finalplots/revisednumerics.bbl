@@ -1,0 +1,70 @@
+\begin{thebibliography}{}
+
+\bibitem[Andrieu et~al., 2010]{PMCMC}
+Andrieu, C., Doucet, A., and Holenstein, R. (2010).
+\newblock Particle {M}arkov chain {M}onte {C}arlo methods.
+\newblock {\em J. R. Statist. Soc. B}, 72(3):269--342.
+
+\bibitem[Barndorff-Nielsen and Shephard, 2001]{bns:ou}
+Barndorff-Nielsen, O.~E. and Shephard, N. (2001).
+\newblock Non-{G}aussian {O}rnstein-{U}hlenbeck-based models and some of their
+  uses in financial economics.
+\newblock {\em J. R. Stat. Soc. Ser. B Stat. Methodol.}, 63(2):167--241.
+
+\bibitem[Barndorff-Nielsen and Shephard, 2002]{bns:real}
+Barndorff-Nielsen, O.~E. and Shephard, N. (2002).
+\newblock Econometric analysis of realized volatility and its use in estimating
+  stochastic volatility models.
+\newblock {\em J. R. Stat. Soc. Ser. B Stat. Methodol.}, 64(2):253--280.
+
+\bibitem[Black, 1976]{black}
+Black, F. (1976).
+\newblock {Studies of stock price volatility changes}.
+\newblock In {\em Proceedings of the 1976 meetings of the business and economic
+  statistics section, American Statistical Association}, volume 177, page~81.
+
+\bibitem[Chernov et~al., 2003]{chernov:multi}
+Chernov, M., Ronald~Gallant, A., Ghysels, E., and Tauchen, G. (2003).
+\newblock {Alternative models for stock price dynamics}.
+\newblock {\em Journal of Econometrics}, 116(1-2):225--257.
+
+\bibitem[Fearnhead et~al., 2010]{fearnhead2010smoothinglinear}
+Fearnhead, P., Wyncoll, D., and Tawn, J. (2010).
+\newblock {A sequential smoothing algorithm with linear computational cost}.
+\newblock {\em Biometrika}, 97(2):447.
+
+\bibitem[Gaetan and Grigoletto, 2004]{GaetanGrigoletto2004}
+Gaetan, C. and Grigoletto, M. (2004).
+\newblock {Smoothing sample extremes with dynamic models}.
+\newblock {\em Extremes}, 7(3):221--236.
+
+\bibitem[Griffin and Steel, 2006]{grif:steel:ou}
+Griffin, J. and Steel, M. (2006).
+\newblock {Inference with non-Gaussian Ornstein-Uhlenbeck processes for
+  stochastic volatility}.
+\newblock {\em Journal of Econometrics}, 134(2):605--644.
+
+\bibitem[Harvey and Shephard, 1996]{harvey:shep}
+Harvey, A. and Shephard, N. (1996).
+\newblock {Estimation of an asymmetric stochastic volatility model for asset
+  returns}.
+\newblock {\em Journal of Business \& Economic Statistics}, 14(4):429--434.
+
+\bibitem[Peters et~al., 2010]{PetersHosackHayes}
+Peters, G., Hosack, G., and Hayes, K. (2010).
+\newblock Ecological non-linear state space model selection via adaptive
+  particle markov chain monte carlo.
+\newblock {\em arXiv}, 1005.2238.
+
+\bibitem[Roberts et~al., 2004]{robe:papa:dell:2004}
+Roberts, G.~O., Papaspiliopoulos, O., and Dellaportas, P. (2004).
+\newblock Bayesian inference for non-{G}aussian {O}rnstein-{U}hlenbeck
+  stochastic volatility processes.
+\newblock {\em J. R. Stat. Soc. Ser. B Stat. Methodol.}, 66(2):369--393.
+
+\bibitem[Robinson and Tawn, 1995]{RobinsonTawn1995}
+Robinson, M. and Tawn, J. (1995).
+\newblock {Statistics for exceptional athletics records}.
+\newblock {\em Applied Statistics}, 44(4):499--511.
+
+\end{thebibliography}

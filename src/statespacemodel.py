@@ -36,6 +36,7 @@ class SSM:
         self.excludedobservations = []
         self.filteringlist = []
         self.predictionlist = []
+        self.smoothingfunctionals = {}
     def setParameters(self, parameters):
         self.parameters = parameters
     def setFirstStateGenerator(self, function):

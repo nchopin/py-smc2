@@ -26,18 +26,18 @@
 # Once you've chosen the paramerers, launch the script "launch.py" by typing
 # :~$ python launch.py pathtotheuserfile
 
-RANDOMSEED = True 
+RANDOMSEED = True
 ##
-MODEL = "athletics"
-T = 100
-DATASET = "athletics-best-two"
+MODEL = "SVonefactor"
+T = 1000
+DATASET = "SP500recent"
 METHOD = "SMC2"
 ##
 GENERATERFILE = True
-PLOT = True
+PLOT = False
 ##
-NTHETA = 1000
-NX = 250
+NTHETA = 2000
+NX = 100
 DYNAMICNX = True
 PROPOSALKERNEL = "independent"
 ESSTHRESHOLD = 0.5
@@ -49,19 +49,21 @@ NBMOVES = 1
 ##
 NSOPF = 100000
 ##
-NBSMC = 20000
+NBSMC = 50000
 BSMCsmooth = 0.1
 ##
 NPMCMC = 200
 TPMCMC = 1000
 PMCMCBURNIN = TPMCMC / 10
 ##
-SAVINGTIMES = []
-SMOOTHING = True
-FILTERING = False
-PREDICTION = False
-#SMOOTHINGTIMES = []
-STORESMOOTHINGTIME = 17
+#SAVINGTIMES = [250]
+SAVINGTIMES = [250, 500]
+#SAVINGTIMES = []
+SMOOTHING = False
+FILTERING = True
+PREDICTION = True
+SMOOTHINGTIMES = []
+STORESMOOTHINGTIME = 0
 ##
 PROFILING = True
 RESULTSFILENAME = ""
@@ -152,6 +154,7 @@ RESULTSFILETYPE = ["RData"]
 # of subfolder rgraphs/.
 #RESULTSFILETYPE = ["RData", "cpickle"]
 ##########################
+
 
 
 

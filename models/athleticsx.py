@@ -116,28 +116,32 @@ modelx.excludedobservations = [17]
 #    for j in range(Ntheta):
 #        result[:, j] = xparticles[:, 0, j] - thetaparticles[2, j] / thetaparticles[1, j] * (1 - (- tempvalue)**(+thetaparticles[1, j]))
 #    return result
-#def beat1985(xparticles, thetaparticles, t):
-#    Nx = xparticles.shape[0]
-#    Ntheta = xparticles.shape[2]
-#    result = zeros((Nx, Ntheta))
-#    for j in range(Ntheta):
-#        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
-#        inner1985 = maximum(0, 1 - xioversigma * (502.62 - xparticles[:, 0, j]))
-#        beat1985 = 1 - exp(-(inner1985) ** (+1 / thetaparticles[1, j]))
-#        result[:, j] = beat1985 
-#    return result
-#def beat1993(xparticles, thetaparticles, t):
-#    Nx = xparticles.shape[0]
-#    Ntheta = xparticles.shape[2]
-#    result = zeros((Nx, Ntheta))
-#    for j in range(Ntheta):
-#        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
-#        inner1993 = maximum(0, 1 - xioversigma * (486.11 - xparticles[:, 0, j]))
-#        beat1993 = 1 - exp(-(inner1993) ** (+1 / thetaparticles[1, j]))
-#        result[:, j] = beat1993 
-#    return result
-#
+def beat1985(xparticles, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros((Nx, Ntheta))
+    for j in range(Ntheta):
+        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
+        inner1985 = maximum(0, 1 - xioversigma * (502.62 - xparticles[:, 0, j]))
+        beat1985 = 1 - exp(-(inner1985) ** (+1 / thetaparticles[1, j]))
+        result[:, j] = beat1985 
+    return result
+def beat1993(xparticles, thetaparticles, t):
+    Nx = xparticles.shape[0]
+    Ntheta = xparticles.shape[2]
+    result = zeros((Nx, Ntheta))
+    for j in range(Ntheta):
+        xioversigma = - thetaparticles[1, j] / thetaparticles[2, j]
+        inner1993 = maximum(0, 1 - xioversigma * (486.11 - xparticles[:, 0, j]))
+        beat1993 = 1 - exp(-(inner1993) ** (+1 / thetaparticles[1, j]))
+        result[:, j] = beat1993 
+    return result
+
+modelx.smoothingfunctionals = {"beat1985": beat1985, "beat1993": beat1993}
 #modelx.functionals = {"firststate": firststate, "CIlow": CIlow, "CIhigh": CIhigh, \
 #        "beat1985": beat1985, "beat1993": beat1993}
+
+
+
 
 

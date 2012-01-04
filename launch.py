@@ -93,7 +93,8 @@ if userfile.METHOD == "SMC2":
             "dynamicNx": userfile.DYNAMICNX, "dynamicNxThreshold": \
             userfile.DYNAMICNXTHRESHOLD, "NxLimit": userfile.NXLIMIT, \
             "filtering": userfile.FILTERING, "smoothing": userfile.SMOOTHING, \
-            "smoothingtimes": userfile.SMOOTHINGTIMES, "storesmoothingtime": userfile.STORESMOOTHINGTIME, \
+#            "smoothingtimes": userfile.SMOOTHINGTIMES, 
+            "storesmoothingtime": userfile.STORESMOOTHINGTIME, \
             "prediction": userfile.PREDICTION}
 elif userfile.METHOD == "SOPF":
     algorithmparameters = {"N": userfile.NSOPF}

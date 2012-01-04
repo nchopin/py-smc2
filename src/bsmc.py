@@ -68,7 +68,7 @@ class BSMC:
         # number of already past saving times
         self.alreadystored = 0
         self.thetahistory = zeros((len(self.savingtimes), self.modeltheta.parameterdimension, self.N))
-        self.weighthistory = zeros((len(self.savingtimes), self.N))
+        #self.weighthistory = zeros((len(self.savingtimes), self.N))
         # prediction
         if self.AP["prediction"]:
             if hasattr(self.modelx, "predictionlist"):
@@ -138,7 +138,7 @@ class BSMC:
             if t in self.savingtimes or t == self.T - 1:
                 print "\nsaving particles at time %i" % t
                 self.thetahistory[self.alreadystored, ...] = self.thetaparticles.copy()
-                self.weighthistory[self.alreadystored, ...] = self.xweights.copy()
+                #self.weighthistory[self.alreadystored, ...] = self.xweights.copy()
                 self.alreadystored += 1
     def computeCovarianceAndMean(self):
         X = transpose(self.transformedthetaparticles)
@@ -157,7 +157,7 @@ class BSMC:
                 "observations": self.observations, \
                 "savingtimes" : self.savingtimes, \
                 "thetahistory": self.thetahistory, \
-                "weighthistory": self.weighthistory, \
+                #"weighthistory": self.weighthistory, \
                 "evidences": self.evidences, \
                 "resamplingindices": self.resamplingindices, \
                 "computingtimes": self.computingtimes}
