@@ -218,7 +218,8 @@ The \pysmc package is organized as follows:
 The launch file is there to be executed but not modified.
  \item \texttt{data} subfolder: where the data sets should be. There are the files finishing by \texttt{.R}. These are not actually \texttt{R} code files
 but simple text files with one value per line. Open \texttt{anisus.R} or \texttt{nutria.R} for simplest examples. If you want to add a new data set,
-add a file in this subfolder, with the \texttt{.R} file extension. You can then specify it in the \texttt{DATASET} entry of the user file (without the extension), as we saw earlier. For example, if you add \texttt{foo.R} in the \texttt{data} subfolder, put \texttt{DATASET = "foo"} in the user file.
+add a file in this subfolder, with the \texttt{.R} file extension. You can then specify it in the \texttt{DATASET} entry of the user file (without the extension), as we saw earlier. For example, if you add \texttt{foo.R} in the \texttt{data} subfolder, put \texttt{DATASET = "foo"} in the user file. Just make sure it is in the
+same format as the proposed data sets, that is: one value per line, no column names, if the observation is multidimensional, the different components are separated by a space (see \texttt{athletics-best-two.R} for an example).
  \item \texttt{manual} subfolder: where this manual is.
  \item \texttt{models} subfolder: where the model files are. There are two files for each model: for a model \texttt{foo}, there would be \texttt{foox.py} and 
 \texttt{footheta.py}. The file finishing in \texttt{x.py} mainly described the dynamics of the hidden process and the measurement function. The file finishing
@@ -232,6 +233,8 @@ The \texttt{R} file is also informative if you want to know precisely how the re
  \item \texttt{src} subfolder: this is the main code folder, with the various methods, the model handling, the generation of R files, etc. This is 
 all in python, with bits in C using \texttt{weave.inline}.
  \item \texttt{test} subfolder: this is a folder to test bits of code before incorporating them in the main files. Not interesting for most users.
+ \item \texttt{userfiles} subfolder: contains a bunch of userfile examples, for launching various methods on
+various models.
 \end{itemize}
 
 
@@ -239,7 +242,24 @@ all in python, with bits in C using \texttt{weave.inline}.
 
 \subsection{Making your own models}
 
-Easiest way would be to copy and paste model files and customize them. The simplest model to start from is the local level model.
+Let us look at a model file line by line.
+
+First one needs to specify the state space model, that is:
+\begin{itemize}
+ \item $\mu_\theta$, the distribution of $x_0$, from which one needs to sample from,
+ \item $f_\theta$, the transition function, from which one needs to sample from,
+ \item $g_\theta$, the measure function, from which one needs to evaluate the density.
+\end{itemize}
+Additionally you might want to specify a function to sample from $g_\theta$, which 
+can be useful to generate synthetic data sets. Otherwise you could still use the model
+on real data set, which is the most important.
+
+Let us see how to specify a model by taking the example of the hidden auto regressive model.
+\begin{itemize}
+ \item $\mu_\theta$ is $\mathcal{N}(0, 1)$
+ \item $f_\theta(x_t\vert x_{t-1})$ is $\mathcal{N}(\rho x_{t-1}, \sigma^2)$
+ \item $g_\theta(y_t\vert x_t)$ is $\mathcal{N}(\rho x_{t}, \tau^2)$
+\end{itemize}
 
 \subsection{Adding your data files}
 

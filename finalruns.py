@@ -17,32 +17,32 @@ import subprocess
 #    except:
 #        pass
 
-#for i in range(2):
-#    try:
-#        subprocess.call(["python", "launch.py", "userfiles/BSMCSVonesynthotherh1.py"])
-#    except:
-#        pass
-#    try:
-#        subprocess.call(["python", "launch.py", "userfiles/BSMCSVonesynthotherh2.py"])
-#    except:
-#        pass
+for i in range(1):
+    try:
+        subprocess.call(["python", "launch.py", "userfiles/BSMCSVonesynthotherh1.py"])
+    except:
+        pass
+    try:
+        subprocess.call(["python", "launch.py", "userfiles/BSMCSVonesynthotherh2.py"])
+    except:
+        pass
 
-nruns = 3
-processes = []
-for j in range(nruns):
-    processes.append(subprocess.Popen(["python", "launch.py", "userfiles/SMC2SVmultiSP500.py"]))
-for j in range(nruns):
-     processes[j].wait()
-
-processes = []
-for j in range(nruns):
-    processes.append(subprocess.Popen(["python", "launch.py", "userfiles/SMC2SVoneSP500.py"]))
-for j in range(nruns):
-     processes[j].wait()
-
-processes = []
-for j in range(nruns):
-    processes.append(subprocess.Popen(["python", "launch.py", "userfiles/SMC2SVfixedrhoSP500.py"]))
-for j in range(nruns):
-     processes[j].wait()
-
+#nruns = 3
+#processes = []
+#for j in range(nruns):
+#    processes.append(subprocess.Popen(["python", "launch.py", "userfiles/SMC2SVmultiSP500.py"]))
+#for j in range(nruns):
+#     processes[j].wait()
+#
+#processes = []
+#for j in range(nruns):
+#    processes.append(subprocess.Popen(["python", "launch.py", "userfiles/SMC2SVoneSP500.py"]))
+#for j in range(nruns):
+#     processes[j].wait()
+#
+#processes = []
+#for j in range(nruns):
+#    processes.append(subprocess.Popen(["python", "launch.py", "userfiles/SMC2SVfixedrhoSP500.py"]))
+#for j in range(nruns):
+#     processes[j].wait()
+#
