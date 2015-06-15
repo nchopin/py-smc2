@@ -1,0 +1,1 @@
+The manual is in the package itself, it's a PDF in the manual/ subfolder
